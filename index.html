@@ -386,7 +386,7 @@ canvas { display: block; }
       <div class="card">
         <div class="grid2">
           <div class="field" style="margin:0;"><label>Date</label><input id="w-date" type="date"></div>
-          <div class="field" style="margin:0;"><label>Weight (kg)</label><input id="w-val" type="number" inputmode="decimal" step="0.1" placeholder="0.0"></div>
+          <div class="field" style="margin:0;"><label>Weight (lbs)</label><input id="w-val" type="number" inputmode="decimal" step="0.1" placeholder="0.0"></div>
         </div>
         <div style="margin-top:12px;"><button class="btn btn-primary" onclick="addWeight()">Save weight</button></div>
       </div>
@@ -415,13 +415,14 @@ canvas { display: block; }
     <div class="screen" id="screen-stats">
       <div class="section-lbl">7-day snapshot</div>
       <div class="stat-grid" id="stat-grid"></div>
-      <div class="section-lbl">Calorie trend — 14 days</div>
+      <div class="section-lbl">Calories &amp; Weight — 14 days</div>
       <div class="card" style="padding:14px 16px 10px;">
-        <div class="chart-wrap"><canvas id="cal-chart"></canvas></div>
-      </div>
-      <div class="section-lbl">Weight trend — 14 days</div>
-      <div class="card" style="padding:14px 16px 10px;">
-        <div class="chart-wrap"><canvas id="wt-chart"></canvas></div>
+        <div style="display:flex;gap:14px;margin-bottom:10px;flex-wrap:wrap;">
+          <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#22c87a;"></span>Calories (kcal)</span>
+          <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);"><span style="display:inline-block;width:18px;height:2px;background:#f0a500;border-radius:1px;"></span>Weight (lbs)</span>
+          <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);"><span style="display:inline-block;width:18px;height:1px;border-top:1px dashed rgba(255,255,255,0.35);"></span>Goal</span>
+        </div>
+        <div class="chart-wrap" style="height:180px;"><canvas id="combo-chart"></canvas></div>
       </div>
     </div>
 
@@ -446,7 +447,7 @@ canvas { display: block; }
           <input class="goal-input" type="number" inputmode="numeric" id="g-fiber" placeholder="30">
         </div>
         <div class="goal-row">
-          <div><div class="goal-label">Target weight</div><div class="goal-sub">kg</div></div>
+          <div><div class="goal-label">Target weight</div><div class="goal-sub">lbs</div></div>
           <input class="goal-input" type="number" inputmode="decimal" step="0.1" id="g-weight" placeholder="80.0">
         </div>
       </div>
@@ -716,7 +717,7 @@ function renderWeight() {
     if(prevKey!=null) {
       const diff = (v - S.weights[prevKey]).toFixed(1);
       const cls  = diff>0?'w-up':diff<0?'w-down':'w-same';
-      changeHTML = `<span class="weight-change ${cls}">${diff>0?'+':''}${diff} kg</span>`;
+      changeHTML = `<span class="weight-change ${cls}">${diff>0?'+':''}${diff} lbs</span>`;
     }
     return `<div class="weight-entry">
       <div>
@@ -775,8 +776,8 @@ function renderStats() {
 
   const avgCalStr = cntDays ? Math.round(sumCal/cntDays).toLocaleString() : '—';
   const avgProStr = cntDays ? (sumPro/cntDays).toFixed(1)+'g' : '—';
-  const avgWStr   = avgW ? avgW.toFixed(1)+' kg' : '—';
-  const wGoalStr  = wToGoal !== null ? (wToGoal>0?'+':'')+wToGoal+' kg' : '—';
+  const avgWStr   = avgW ? avgW.toFixed(1)+' lbs' : '—';
+  const wGoalStr  = wToGoal !== null ? (wToGoal>0?'+':'')+wToGoal+' lbs' : '—';
   const wGoalCls  = wToGoal !== null ? (wToGoal>0?'positive':'negative') : '';
 
   document.getElementById('stat-grid').innerHTML=`
@@ -785,111 +786,146 @@ function renderStats() {
     <div class="stat-card"><div class="stat-val">${avgWStr}</div><div class="stat-lbl">Avg weight (7d)</div></div>
     <div class="stat-card"><div class="stat-val ${wGoalCls}">${wGoalStr}</div><div class="stat-lbl">${wToGoal!==null?(wToGoal<=0?'Below target ✓':'Above target'):'To goal weight'}</div></div>`;
 
-  drawLineChart('cal-chart', days14,
+  drawComboChart('combo-chart', days14,
     k=>{ const m=S.meals[k]; return m&&m.length?Math.round(m.reduce((a,e)=>a+(+e.cal||0),0)):null; },
-    '#22c87a', 'kcal', S.goals.cal||null);
-
-  drawLineChart('wt-chart', days14,
     k=>S.weights[k]??null,
-    '#f0a500', 'kg', S.goals.weight||null);
+    S.goals.cal||null, S.goals.weight||null);
 }
 
-function drawLineChart(id, days, valFn, color, unit, goalVal) {
+function drawComboChart(id, days, calFn, wtFn, goalCal, goalWt) {
   const canvas = document.getElementById(id);
   if(!canvas) return;
   const dpr = window.devicePixelRatio||2;
   const W = canvas.parentElement.clientWidth || 320;
-  const H = 140;
+  const H = 180;
   canvas.width  = W*dpr; canvas.height = H*dpr;
   canvas.style.width = W+'px'; canvas.style.height = H+'px';
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr,dpr);
   ctx.clearRect(0,0,W,H);
 
-  const vals = days.map(valFn);
-  const defined = vals.filter(v=>v!==null);
-  if(!defined.length) {
+  const calVals = days.map(calFn);
+  const wtVals  = days.map(wtFn);
+  const calDef  = calVals.filter(v=>v!==null);
+  const wtDef   = wtVals.filter(v=>v!==null);
+  const hasData = calDef.length || wtDef.length;
+
+  if(!hasData) {
     ctx.fillStyle='rgba(255,255,255,0.2)';
-    ctx.font='12px DM Sans, sans-serif';
+    ctx.font="12px 'DM Sans',sans-serif";
     ctx.textAlign='center';
-    ctx.fillText('No data logged yet',W/2,H/2);
+    ctx.fillText('No data logged yet', W/2, H/2);
     return;
   }
 
-  const allVals = goalVal ? [...defined, goalVal] : defined;
-  const minV = Math.min(...allVals);
-  const maxV = Math.max(...allVals);
-  const pad = {t:12,r:8,b:28,l:38};
-  const cw = W-pad.l-pad.r, ch = H-pad.t-pad.b;
   const n = days.length;
-  const range = maxV-minV || 1;
+  // Left axis = calories, right axis = weight
+  const pad = {t:14, r:40, b:28, l:42};
+  const cw = W-pad.l-pad.r, ch = H-pad.t-pad.b;
 
-  const xPos = i => pad.l + i*(cw/(n-1));
-  const yPos = v => pad.t + ch - ((v-minV)/range)*ch;
+  // Cal axis range
+  const allCal = goalCal ? [...calDef, goalCal] : calDef;
+  const calMin = calDef.length ? Math.max(0, Math.min(...allCal)*0.85) : 0;
+  const calMax = calDef.length ? Math.max(...allCal)*1.1 : (goalCal||2000)*1.1;
+  const calRange = calMax-calMin || 1;
 
-  // Grid
-  ctx.strokeStyle='rgba(255,255,255,0.05)';
-  ctx.lineWidth=1;
-  [0,0.5,1].forEach(f=>{
-    const y=pad.t+ch*(1-f);
+  // Wt axis range
+  const allWt = goalWt ? [...wtDef, goalWt] : wtDef;
+  const wtMin  = wtDef.length ? Math.min(...allWt)*0.97 : (goalWt||150)*0.97;
+  const wtMax  = wtDef.length ? Math.max(...allWt)*1.03 : (goalWt||150)*1.03;
+  const wtRange = wtMax-wtMin || 1;
+
+  const barW   = Math.max(4, (cw/n)*0.55);
+  const xCenter = i => pad.l + (i+0.5)*(cw/n);
+  const yCalPos = v => pad.t + ch - ((v-calMin)/calRange)*ch;
+  const yWtPos  = v => pad.t + ch - ((v-wtMin)/wtRange)*ch;
+
+  // Grid lines (3 horizontal)
+  [0, 0.5, 1].forEach(f=>{
+    const y = pad.t + ch*(1-f);
+    ctx.strokeStyle='rgba(255,255,255,0.05)';
+    ctx.lineWidth=0.5;
     ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+cw,y); ctx.stroke();
-    ctx.fillStyle='rgba(255,255,255,0.3)';
-    ctx.font=`9px 'DM Mono', monospace`;
+
+    // Left axis labels (calories)
+    ctx.fillStyle='rgba(34,200,122,0.6)';
+    ctx.font="8px 'DM Mono',monospace";
     ctx.textAlign='right';
-    ctx.fillText((Math.round(minV+range*f)).toLocaleString(), pad.l-4, y+3);
+    const calLabel = Math.round(calMin+calRange*f);
+    ctx.fillText(calLabel>=1000?(calLabel/1000).toFixed(1)+'k':calLabel, pad.l-4, y+3);
+
+    // Right axis labels (weight)
+    if(wtDef.length||goalWt) {
+      ctx.fillStyle='rgba(240,165,0,0.6)';
+      ctx.textAlign='left';
+      ctx.fillText(Math.round(wtMin+wtRange*f), pad.l+cw+4, y+3);
+    }
   });
 
-  // Goal line
-  if(goalVal && goalVal>=minV && goalVal<=maxV) {
-    const gy = yPos(goalVal);
-    ctx.strokeStyle='rgba(255,255,255,0.2)';
-    ctx.setLineDash([4,4]); ctx.lineWidth=1;
+  // ── Calorie bars ──
+  calVals.forEach((v,i)=>{
+    if(v===null) return;
+    const x = xCenter(i) - barW/2;
+    const yTop = yCalPos(v);
+    const barH = Math.max(2, (pad.t+ch) - yTop);
+    ctx.globalAlpha=0.85;
+    ctx.fillStyle='#22c87a';
+    ctx.beginPath();
+    ctx.roundRect(x, yTop, barW, barH, [2,2,0,0]);
+    ctx.fill();
+    ctx.globalAlpha=1;
+  });
+
+  // ── Calorie goal line ──
+  if(goalCal && calDef.length) {
+    const gy = yCalPos(goalCal);
+    ctx.strokeStyle='rgba(34,200,122,0.5)';
+    ctx.setLineDash([4,3]); ctx.lineWidth=1;
     ctx.beginPath(); ctx.moveTo(pad.l,gy); ctx.lineTo(pad.l+cw,gy); ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle='rgba(255,255,255,0.4)';
-    ctx.font="9px 'DM Mono',monospace"; ctx.textAlign='left';
-    ctx.fillText('goal',pad.l+4,gy-3);
+    ctx.fillStyle='rgba(34,200,122,0.7)';
+    ctx.font="8px 'DM Mono',monospace"; ctx.textAlign='left';
+    ctx.fillText('cal goal', pad.l+3, gy-3);
   }
 
-  // Fill
-  ctx.globalAlpha=0.1;
-  ctx.fillStyle=color;
-  let first=true;
-  ctx.beginPath();
-  vals.forEach((v,i)=>{
-    if(v===null) return;
-    if(first) { ctx.moveTo(xPos(i),H-pad.b); ctx.lineTo(xPos(i),yPos(v)); first=false; }
-    else ctx.lineTo(xPos(i),yPos(v));
-  });
-  // close to bottom
-  const lastIdx = vals.map((v,i)=>v!==null?i:-1).filter(i=>i>=0).pop();
-  if(lastIdx!==undefined) { ctx.lineTo(xPos(lastIdx),H-pad.b); }
-  ctx.closePath(); ctx.fill();
-  ctx.globalAlpha=1;
+  // ── Weight line ──
+  if(wtDef.length) {
+    ctx.strokeStyle='#f0a500'; ctx.lineWidth=2;
+    ctx.lineJoin='round'; ctx.lineCap='round';
+    let started=false;
+    ctx.beginPath();
+    wtVals.forEach((v,i)=>{
+      if(v===null){ started=false; return; }
+      const x=xCenter(i), y=yWtPos(v);
+      if(!started){ ctx.moveTo(x,y); started=true; } else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
 
-  // Line
-  ctx.strokeStyle=color; ctx.lineWidth=2; ctx.lineJoin='round'; ctx.lineCap='round';
-  let started=false;
-  ctx.beginPath();
-  vals.forEach((v,i)=>{
-    if(v===null){ started=false; return; }
-    if(!started){ ctx.moveTo(xPos(i),yPos(v)); started=true; }
-    else ctx.lineTo(xPos(i),yPos(v));
-  });
-  ctx.stroke();
+    // Dots
+    wtVals.forEach((v,i)=>{
+      if(v===null) return;
+      ctx.beginPath(); ctx.arc(xCenter(i),yWtPos(v),3,0,Math.PI*2);
+      ctx.fillStyle='#f0a500'; ctx.fill();
+      ctx.strokeStyle='#0d0d0d'; ctx.lineWidth=1.5; ctx.stroke();
+    });
+  }
 
-  // Dots
-  vals.forEach((v,i)=>{
-    if(v===null) return;
-    ctx.beginPath(); ctx.arc(xPos(i),yPos(v),3.5,0,Math.PI*2);
-    ctx.fillStyle=color; ctx.fill();
-    ctx.strokeStyle='#0d0d0d'; ctx.lineWidth=1.5; ctx.stroke();
-  });
+  // ── Weight goal line ──
+  if(goalWt && wtDef.length) {
+    const gy = yWtPos(goalWt);
+    ctx.strokeStyle='rgba(240,165,0,0.45)';
+    ctx.setLineDash([4,3]); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad.l,gy); ctx.lineTo(pad.l+cw,gy); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='rgba(240,165,0,0.65)';
+    ctx.font="8px 'DM Mono',monospace"; ctx.textAlign='right';
+    ctx.fillText('wt goal', pad.l+cw-3, gy-3);
+  }
 
-  // X labels
-  ctx.fillStyle='rgba(255,255,255,0.3)';
-  ctx.font="9px 'DM Mono',monospace"; ctx.textAlign='center';
-  days.forEach((k,i)=>{ if(i%3===0||i===days.length-1) ctx.fillText(fmtShort(k),xPos(i),H-8); });
+  // ── X date labels ──
+  ctx.fillStyle='rgba(255,255,255,0.28)';
+  ctx.font="8px 'DM Mono',monospace"; ctx.textAlign='center';
+  days.forEach((k,i)=>{ if(i%3===0||i===n-1) ctx.fillText(fmtShort(k), xCenter(i), H-8); });
 }
 
 // ── Goals ──────────────────────────────────────────────────────
