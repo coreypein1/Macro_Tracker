@@ -41,16 +41,27 @@ html { height: 100%; }
 
 body {
   font-family: var(--font);
-  background: var(--bg);
+  background: #050505;
   color: var(--text);
   height: 100%;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   user-select: none;
+  display: flex;
+  justify-content: center;
 }
 
 /* ── Layout ── */
-#app { display: flex; flex-direction: column; height: 100dvh; height: 100vh; }
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  height: 100vh;
+  width: 100%;
+  max-width: 430px;
+  position: relative;
+  background: var(--bg);
+}
 
 /* ── Status bar spacer ── */
 .statusbar { height: env(safe-area-inset-top, 44px); background: var(--bg); flex-shrink: 0; }
@@ -65,16 +76,30 @@ body {
   align-items: center;
   justify-content: space-between;
 }
-.header-left h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; }
-.header-left p { font-size: 12px; color: var(--text2); margin-top: 1px; font-weight: 300; }
+.header-logo { display: flex; align-items: center; }
+.header-logo svg { display: block; }
+.header-right { display: flex; align-items: center; gap: 8px; }
+.gear-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text2);
+  transition: color 0.15s, background 0.15s;
+  padding: 0;
+}
+.gear-btn:active { background: var(--bg4); color: var(--text); }
 .header-date {
   font-family: var(--mono);
   font-size: 11px;
-  color: var(--green);
-  background: var(--green-dim);
+  color: var(--amber);
+  background: var(--amber-dim);
   padding: 4px 10px;
   border-radius: 20px;
   letter-spacing: 0.3px;
+  border: 1px solid rgba(240,165,0,0.2);
 }
 
 /* ── Scroll area ── */
@@ -92,7 +117,11 @@ body {
 .nav {
   flex-shrink: 0;
   position: fixed;
-  bottom: 0; left: 0; right: 0;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
   background: var(--bg);
   border-top: 1px solid var(--border);
   display: flex;
@@ -324,18 +353,205 @@ canvas { display: block; }
 .streak { display: flex; align-items: center; gap: 6px; background: var(--amber-dim); border: 1px solid rgba(240,165,0,0.15); border-radius: var(--r2); padding: 8px 12px; margin-bottom: 12px; }
 .streak-icon { font-size: 16px; }
 .streak-text { font-size: 12px; color: var(--amber); font-weight: 500; }
+
+/* ── Loading screen ── */
+#loader {
+  position: fixed; inset: 0;
+  background: #0d0d0d;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+#loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+.loader-icon-wrap {
+  width: 100px; height: 100px;
+  border-radius: 24px;
+  overflow: hidden;
+  margin-bottom: 40px;
+  opacity: 0;
+  animation: iconPop 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.1s forwards;
+}
+@keyframes iconPop {
+  from { opacity: 0; transform: scale(0.5); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.loader-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 36px;
+}
+.loader-bar {
+  width: 6px;
+  border-radius: 3px;
+  animation: barPulse 1.0s ease-in-out infinite;
+}
+.loader-bar:nth-child(1) { background: rgba(34,200,122,0.2);  height: 12px; animation-delay: 0.00s; }
+.loader-bar:nth-child(2) { background: rgba(34,200,122,0.5);  height: 20px; animation-delay: 0.13s; }
+.loader-bar:nth-child(3) { background: rgba(240,165,0,0.7);   height: 28px; animation-delay: 0.26s; }
+.loader-bar:nth-child(4) { background: #f0a500;               height: 36px; animation-delay: 0.39s; }
+@keyframes barPulse {
+  0%,100% { transform: scaleY(0.35); opacity: 0.4; }
+  50%      { transform: scaleY(1);    opacity: 1;   }
+}
+
+.loader-wordmark {
+  margin-top: 30px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  color: rgba(255,255,255,0.3);
+  text-transform: uppercase;
+  opacity: 0;
+  animation: fadeUp 0.5s ease 0.4s forwards;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Settings panel ── */
+.settings-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 500;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+.settings-overlay.open { opacity: 1; visibility: visible; }
+.settings-panel {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: var(--bg2);
+  border-top: 1px solid var(--border2);
+  border-radius: 20px 20px 0 0;
+  padding: 0 0 calc(20px + var(--safe));
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+  max-height: 88vh;
+  overflow-y: auto;
+}
+.settings-overlay.open .settings-panel { transform: translateY(0); }
+.settings-handle {
+  width: 36px; height: 4px;
+  background: var(--border2);
+  border-radius: 2px;
+  margin: 12px auto 4px;
+}
+.settings-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.settings-title { font-size: 16px; font-weight: 600; color: var(--text); }
+.settings-close {
+  background: var(--bg3); border: 1px solid var(--border2);
+  color: var(--text2); border-radius: 8px;
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 18px; line-height: 1;
+}
+.settings-close:active { background: var(--bg4); }
+.settings-body { padding: 16px 20px; }
+.settings-section-lbl {
+  font-size: 10px; font-weight: 500; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--text3);
+  margin: 16px 0 8px;
+}
+.settings-section-lbl:first-child { margin-top: 0; }
+.settings-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-row-label { font-size: 13px; color: var(--text); }
+.settings-row-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+/* Toggle switch */
+.toggle {
+  position: relative; width: 42px; height: 24px;
+  flex-shrink: 0;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-track {
+  position: absolute; inset: 0;
+  background: var(--bg4); border: 1px solid var(--border2);
+  border-radius: 12px; cursor: pointer; transition: background 0.2s;
+}
+.toggle input:checked + .toggle-track { background: var(--green); border-color: var(--green); }
+.toggle-track::after {
+  content: ''; position: absolute;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; top: 2px; left: 2px;
+  transition: transform 0.2s;
+}
+.toggle input:checked + .toggle-track::after { transform: translateX(18px); }
+/* Segmented control */
+.seg-ctrl {
+  display: flex; background: var(--bg3);
+  border: 1px solid var(--border2); border-radius: 8px; overflow: hidden;
+}
+.seg-btn {
+  flex: 1; padding: 5px 10px; font-size: 12px; font-weight: 500;
+  font-family: var(--font); color: var(--text2);
+  background: none; border: none; cursor: pointer; transition: all 0.15s;
+}
+.seg-btn.active { background: var(--bg4); color: var(--text); }
+
 </style>
 </head>
 <body>
+
+<!-- Loading screen -->
+<div id="loader">
+  <div class="loader-icon-wrap">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+      <rect width="100" height="100" rx="22" fill="#0d0d0d"/>
+      <!-- M letterform in green -->
+      <text x="8" y="74" font-family="Arial Black, Impact, sans-serif" font-weight="900" font-size="72" fill="#22c87a">M</text>
+      <!-- Bar chart overlay in amber tones -->
+      <rect x="61" y="62" width="7" height="12" rx="2" fill="rgba(240,165,0,0.35)"/>
+      <rect x="70" y="53" width="7" height="21" rx="2" fill="rgba(240,165,0,0.65)"/>
+      <rect x="79" y="42" width="7" height="32" rx="2" fill="#f0a500"/>
+    </svg>
+  </div>
+  <div class="loader-bars">
+    <div class="loader-bar"></div>
+    <div class="loader-bar"></div>
+    <div class="loader-bar"></div>
+    <div class="loader-bar"></div>
+  </div>
+  <div class="loader-wordmark">Macro Log</div>
+</div>
+
 <div id="app">
   <div class="statusbar"></div>
 
   <div class="header">
-    <div class="header-left">
-      <h1>Health</h1>
-      <p id="header-sub">Loading...</p>
+    <div class="header-logo">
+      <svg viewBox="0 0 80 36" xmlns="http://www.w3.org/2000/svg" width="80" height="36">
+        <!-- M letterform -->
+        <text x="0" y="30" font-family="Arial Black, Impact, sans-serif" font-weight="900" font-size="34" fill="#22c87a">M</text>
+        <!-- Bar chart -->
+        <rect x="46" y="20" width="5" height="10" rx="1.5" fill="rgba(240,165,0,0.3)"/>
+        <rect x="53" y="14" width="5" height="16" rx="1.5" fill="rgba(240,165,0,0.65)"/>
+        <rect x="60" y="7"  width="5" height="23" rx="1.5" fill="#f0a500"/>
+        <!-- Subtitle -->
+        <text x="1" y="36" font-family="DM Sans, Arial, sans-serif" font-size="7" font-weight="400" fill="rgba(255,255,255,0.3)" letter-spacing="1.5">MACRO LOG</text>
+      </svg>
     </div>
-    <div class="header-date" id="header-date"></div>
+    <div class="header-right">
+      <div class="header-date" id="header-date"></div>
+      <button class="gear-btn" onclick="openSettings()" aria-label="Settings">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+        </svg>
+      </button>
+    </div>
   </div>
 
   <div class="scroll-area" id="scroll-area">
@@ -448,21 +664,10 @@ canvas { display: block; }
         </div>
         <div class="goal-row">
           <div><div class="goal-label">Target weight</div><div class="goal-sub">lbs</div></div>
-          <input class="goal-input" type="number" inputmode="decimal" step="0.1" id="g-weight" placeholder="80.0">
+          <input class="goal-input" type="number" inputmode="decimal" step="0.1" id="g-weight" placeholder="180.0">
         </div>
       </div>
       <button class="btn btn-primary" onclick="saveGoals()">Save goals</button>
-      <div class="section-lbl" style="margin-top:20px;">Data</div>
-      <div class="card">
-        <button class="btn btn-ghost" onclick="exportData()" style="margin-bottom:10px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-          Export data as JSON
-        </button>
-        <button class="btn btn-ghost" onclick="confirmClear()" style="color:#ff5c5c; border-color: rgba(255,92,92,0.2);">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
-          Clear all data
-        </button>
-      </div>
     </div>
 
   </div><!-- /scroll-area -->
@@ -489,10 +694,88 @@ canvas { display: block; }
       Goals
     </button>
   </nav>
+<!-- Settings panel -->
+<div class="settings-overlay" id="settings-overlay" onclick="handleSettingsOverlayClick(event)">
+  <div class="settings-panel" id="settings-panel">
+    <div class="settings-handle"></div>
+    <div class="settings-header">
+      <span class="settings-title">Settings</span>
+      <button class="settings-close" onclick="closeSettings()">×</button>
+    </div>
+    <div class="settings-body">
+
+      <div class="settings-section-lbl">Display</div>
+      <div class="card" style="padding:4px 14px;margin-bottom:0;">
+        <div class="settings-row">
+          <div><div class="settings-row-label">Show calorie progress bar</div><div class="settings-row-sub">Bar under daily totals</div></div>
+          <label class="toggle"><input type="checkbox" id="s-show-progress" checked onchange="saveSettingsState()"><div class="toggle-track"></div></label>
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-row-label">Show streak badge</div><div class="settings-row-sub">Daily logging streak counter</div></div>
+          <label class="toggle"><input type="checkbox" id="s-show-streak" checked onchange="saveSettingsState()"><div class="toggle-track"></div></label>
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-row-label">Weight unit</div><div class="settings-row-sub">Used across all screens</div></div>
+          <div class="seg-ctrl">
+            <button class="seg-btn active" id="s-unit-lbs" onclick="setWeightUnit('lbs')">lbs</button>
+            <button class="seg-btn" id="s-unit-kg" onclick="setWeightUnit('kg')">kg</button>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-row-label">Default meal</div><div class="settings-row-sub">Pre-selected on log screen</div></div>
+          <select id="s-default-meal" onchange="saveSettingsState()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:var(--font);font-size:12px;padding:4px 8px;appearance:none;-webkit-appearance:none;">
+            <option value="auto">Auto (by time)</option>
+            <option>Breakfast</option><option>Morning Snack</option>
+            <option>Lunch</option><option>Afternoon Snack</option>
+            <option>Dinner</option><option>Evening Snack</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="settings-section-lbl">Data</div>
+      <div class="card" style="padding:12px 14px;margin-bottom:0;">
+        <button class="btn btn-ghost" onclick="exportData()" style="margin-bottom:10px;height:42px;font-size:13px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Export data as JSON
+        </button>
+        <button class="btn btn-ghost" onclick="confirmClear()" style="height:42px;font-size:13px;color:#ff5c5c;border-color:rgba(255,92,92,0.2);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+          Clear all data
+        </button>
+      </div>
+
+      <div class="settings-section-lbl">About</div>
+      <div class="card" style="padding:4px 14px;margin-bottom:0;">
+        <div class="settings-row">
+          <div class="settings-row-label">Version</div>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--text2);">1.0.0</span>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-label">Data stored</div>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--text2);" id="s-data-size">—</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 </div>
 
 <div class="toast" id="toast"></div>
 
+<script>
+// ── Preloaded fake data ────────────────────────────────────────
+(function() {
+  var d = {"meals": {"2026-01-19": [{"name": "Veggie omelette with whole grain toast", "meal": "Breakfast", "cal": 342, "pro": 19.8, "carb": 27.0, "fib": 3.6}, {"name": "Salmon and rice with steamed broccoli", "meal": "Lunch", "cal": 497, "pro": 40.8, "carb": 42.6, "fib": 4.4}, {"name": "Chicken stir fry with brown rice", "meal": "Dinner", "cal": 541, "pro": 41.0, "carb": 54.1, "fib": 5.6}, {"name": "Apple and almond butter", "meal": "Morning Snack", "cal": 193, "pro": 5.1, "carb": 22.3, "fib": 4.1}], "2026-01-20": [{"name": "Greek yogurt with granola and berries", "meal": "Breakfast", "cal": 356, "pro": 18.9, "carb": 50.3, "fib": 3.1}, {"name": "Lentil soup with crusty bread", "meal": "Lunch", "cal": 407, "pro": 20.8, "carb": 60.6, "fib": 11.4}, {"name": "Pasta with marinara and turkey meatballs", "meal": "Dinner", "cal": 755, "pro": 46.6, "carb": 84.3, "fib": 6.7}, {"name": "Hard boiled eggs x2", "meal": "Morning Snack", "cal": 127, "pro": 10.9, "carb": 0.9, "fib": 0.0}, {"name": "Trail mix", "meal": "Afternoon Snack", "cal": 181, "pro": 5.4, "carb": 19.9, "fib": 2.7}], "2026-01-21": [{"name": "Bacon and egg breakfast sandwich", "meal": "Breakfast", "cal": 431, "pro": 23.4, "carb": 37.8, "fib": 1.8}, {"name": "Chicken caesar wrap", "meal": "Lunch", "cal": 583, "pro": 41.0, "carb": 49.6, "fib": 3.2}, {"name": "Chicken and vegetable soup with bread", "meal": "Dinner", "cal": 524, "pro": 39.3, "carb": 56.8, "fib": 8.7}, {"name": "Greek yogurt", "meal": "Afternoon Snack", "cal": 132, "pro": 14.3, "carb": 10.2, "fib": 0.0}], "2026-01-22": [{"name": "Scrambled eggs and toast", "meal": "Breakfast", "cal": 408, "pro": 23.3, "carb": 36.9, "fib": 1.9}, {"name": "BLT sandwich with side salad", "meal": "Lunch", "cal": 506, "pro": 24.8, "carb": 47.5, "fib": 4.1}, {"name": "Pork tenderloin with quinoa and green beans", "meal": "Dinner", "cal": 515, "pro": 46.0, "carb": 38.6, "fib": 5.5}, {"name": "Hard boiled eggs x2", "meal": "Morning Snack", "cal": 130, "pro": 11.2, "carb": 0.9, "fib": 0.0}, {"name": "Greek yogurt", "meal": "Afternoon Snack", "cal": 136, "pro": 14.7, "carb": 10.5, "fib": 0.0}, {"name": "Small bowl of cereal with milk", "meal": "Evening Snack", "cal": 228, "pro": 8.3, "carb": 39.4, "fib": 2.1}], "2026-01-23": [{"name": "Veggie omelette with whole grain toast", "meal": "Breakfast", "cal": 354, "pro": 20.5, "carb": 28.0, "fib": 3.7}, {"name": "Lentil soup with crusty bread", "meal": "Lunch", "cal": 465, "pro": 23.8, "carb": 69.3, "fib": 13.0}, {"name": "Grilled salmon with sweet potato and asparagus", "meal": "Dinner", "cal": 580, "pro": 43.0, "carb": 48.6, "fib": 6.5}, {"name": "Apple and almond butter", "meal": "Morning Snack", "cal": 204, "pro": 5.4, "carb": 23.6, "fib": 4.3}, {"name": "Trail mix", "meal": "Afternoon Snack", "cal": 189, "pro": 5.7, "carb": 20.8, "fib": 2.8}], "2026-01-24": [{"name": "Overnight oats with almond butter", "meal": "Breakfast", "cal": 384, "pro": 14.6, "carb": 49.4, "fib": 6.4}, {"name": "Tuna pasta salad", "meal": "Lunch", "cal": 479, "pro": 33.8, "carb": 48.8, "fib": 3.8}, {"name": "Grilled steak with mashed potatoes and broccoli", "meal": "Dinner", "cal": 656, "pro": 52.5, "carb": 44.4, "fib": 5.0}, {"name": "Banana", "meal": "Morning Snack", "cal": 115, "pro": 1.1, "carb": 29.6, "fib": 3.3}, {"name": "Warm milk with honey", "meal": "Evening Snack", "cal": 126, "pro": 5.8, "carb": 19.3, "fib": 0.0}], "2026-01-25": [{"name": "Greek yogurt with granola and berries", "meal": "Breakfast", "cal": 364, "pro": 19.3, "carb": 51.4, "fib": 3.2}, {"name": "Salmon and rice with steamed broccoli", "meal": "Lunch", "cal": 573, "pro": 47.1, "carb": 49.1, "fib": 5.1}, {"name": "Shrimp and vegetable curry with rice", "meal": "Dinner", "cal": 544, "pro": 33.0, "carb": 62.2, "fib": 4.9}, {"name": "Warm milk with honey", "meal": "Evening Snack", "cal": 131, "pro": 6.0, "carb": 20.1, "fib": 0.0}], "2026-01-26": [{"name": "Avocado toast with poached eggs", "meal": "Breakfast", "cal": 436, "pro": 19.2, "carb": 38.3, "fib": 7.5}, {"name": "Lentil soup with crusty bread", "meal": "Lunch", "cal": 390, "pro": 19.9, "carb": 58.0, "fib": 10.9}, {"name": "Shrimp and vegetable curry with rice", "meal": "Dinner", "cal": 514, "pro": 31.2, "carb": 58.7, "fib": 4.6}, {"name": "Cottage cheese with pineapple", "meal": "Evening Snack", "cal": 177, "pro": 20.0, "carb": 17.7, "fib": 0.0}], "2026-01-27": [{"name": "Avocado toast with poached eggs", "meal": "Breakfast", "cal": 444, "pro": 19.5, "carb": 39.0, "fib": 7.6}, {"name": "Chicken burrito bowl", "meal": "Lunch", "cal": 636, "pro": 45.2, "carb": 69.8, "fib": 8.2}, {"name": "Beef tacos with corn tortillas", "meal": "Dinner", "cal": 621, "pro": 36.9, "carb": 56.2, "fib": 5.8}, {"name": "Handful of mixed nuts", "meal": "Morning Snack", "cal": 172, "pro": 5.0, "carb": 8.1, "fib": 2.0}], "2026-01-28": [{"name": "Avocado toast with poached eggs", "meal": "Breakfast", "cal": 384, "pro": 16.9, "carb": 33.7, "fib": 6.6}, {"name": "Quinoa bowl with roasted vegetables", "meal": "Lunch", "cal": 502, "pro": 19.6, "carb": 67.6, "fib": 9.8}, {"name": "Chicken stir fry with brown rice", "meal": "Dinner", "cal": 522, "pro": 39.6, "carb": 52.2, "fib": 5.4}, {"name": "Edamame", "meal": "Morning Snack", "cal": 161, "pro": 12.9, "carb": 12.9, "fib": 5.4}, {"name": "Peanut butter on rice cakes", "meal": "Afternoon Snack", "cal": 212, "pro": 7.1, "carb": 26.2, "fib": 2.0}], "2026-01-29": [{"name": "Protein pancakes with maple syrup", "meal": "Breakfast", "cal": 507, "pro": 30.9, "carb": 60.7, "fib": 3.3}, {"name": "Shrimp tacos x2", "meal": "Lunch", "cal": 523, "pro": 31.4, "carb": 54.4, "fib": 5.2}, {"name": "Turkey chili with cornbread", "meal": "Dinner", "cal": 554, "pro": 38.2, "carb": 59.2, "fib": 9.5}, {"name": "Hard boiled eggs x2", "meal": "Morning Snack", "cal": 138, "pro": 11.8, "carb": 1.0, "fib": 0.0}, {"name": "Cheese and crackers", "meal": "Afternoon Snack", "cal": 188, "pro": 7.9, "carb": 19.8, "fib": 1.0}], "2026-01-30": [{"name": "Oatmeal with banana and honey", "meal": "Breakfast", "cal": 355, "pro": 11.2, "carb": 67.3, "fib": 5.6}, {"name": "Grilled chicken salad with vinaigrette", "meal": "Lunch", "cal": 521, "pro": 45.6, "carb": 19.6, "fib": 5.4}, {"name": "Chicken stir fry with brown rice", "meal": "Dinner", "cal": 582, "pro": 44.1, "carb": 58.2, "fib": 6.0}, {"name": "Dark chocolate x2 squares", "meal": "Evening Snack", "cal": 125, "pro": 2.1, "carb": 14.6, "fib": 2.1}], "2026-01-31": [{"name": "Bacon and egg breakfast sandwich", "meal": "Breakfast", "cal": 444, "pro": 24.1, "carb": 38.9, "fib": 1.9}, {"name": "Turkey and avocado wrap", "meal": "Lunch", "cal": 540, "pro": 35.3, "carb": 45.7, "fib": 6.2}, {"name": "Pork tenderloin with quinoa and green beans", "meal": "Dinner", "cal": 550, "pro": 49.1, "carb": 41.2, "fib": 5.9}, {"name": "Trail mix", "meal": "Afternoon Snack", "cal": 217, "pro": 6.5, "carb": 23.9, "fib": 3.3}], "2026-02-01": [{"name": "Scrambled eggs and toast", "meal": "Breakfast", "cal": 395, "pro": 22.6, "carb": 35.7, "fib": 1.9}, {"name": "Quinoa bowl with roasted vegetables", "meal": "Lunch", "cal": 464, "pro": 18.2, "carb": 62.5, "fib": 9.1}, {"name": "Beef tacos with corn tortillas", "meal": "Dinner", "cal": 628, "pro": 37.3, "carb": 56.9, "fib": 5.9}, {"name": "Dark chocolate x2 squares", "meal": "Evening Snack", "cal": 119, "pro": 2.0, "carb": 13.9, "fib": 2.0}], "2026-02-02": [{"name": "Veggie omelette with whole grain toast", "meal": "Breakfast", "cal": 411, "pro": 23.8, "carb": 32.4, "fib": 4.3}, {"name": "Turkey and avocado wrap", "meal": "Lunch", "cal": 573, "pro": 37.5, "carb": 48.5, "fib": 6.6}, {"name": "Pasta with marinara and turkey meatballs", "meal": "Dinner", "cal": 626, "pro": 38.6, "carb": 69.9, "fib": 5.5}, {"name": "Edamame", "meal": "Morning Snack", "cal": 149, "pro": 11.9, "carb": 11.9, "fib": 5.0}], "2026-02-03": [{"name": "Overnight oats with almond butter", "meal": "Breakfast", "cal": 398, "pro": 15.2, "carb": 51.2, "fib": 6.6}, {"name": "Shrimp tacos x2", "meal": "Lunch", "cal": 555, "pro": 33.3, "carb": 57.7, "fib": 5.5}, {"name": "Grilled steak with mashed potatoes and broccoli", "meal": "Dinner", "cal": 675, "pro": 54.0, "carb": 45.7, "fib": 5.2}, {"name": "Trail mix", "meal": "Afternoon Snack", "cal": 183, "pro": 5.5, "carb": 20.2, "fib": 2.8}, {"name": "Dark chocolate x2 squares", "meal": "Evening Snack", "cal": 112, "pro": 1.9, "carb": 13.1, "fib": 1.9}], "2026-02-04": [{"name": "Oatmeal with banana and honey", "meal": "Breakfast", "cal": 388, "pro": 12.2, "carb": 73.5, "fib": 6.1}, {"name": "Chicken burrito bowl", "meal": "Lunch", "cal": 682, "pro": 48.4, "carb": 74.8, "fib": 8.8}, {"name": "Grilled steak with mashed potatoes and broccoli", "meal": "Dinner", "cal": 597, "pro": 47.7, "carb": 40.4, "fib": 4.6}, {"name": "Cheese and crackers", "meal": "Afternoon Snack", "cal": 171, "pro": 7.2, "carb": 18.0, "fib": 0.9}, {"name": "Casein protein shake", "meal": "Evening Snack", "cal": 126, "pro": 21.5, "carb": 5.4, "fib": 0.0}], "2026-02-05": [{"name": "Oatmeal with banana and honey", "meal": "Breakfast", "cal": 391, "pro": 12.3, "carb": 74.1, "fib": 6.2}, {"name": "Salmon and rice with steamed broccoli", "meal": "Lunch", "cal": 581, "pro": 47.7, "carb": 49.8, "fib": 5.2}, {"name": "Chicken and vegetable soup with bread", "meal": "Dinner", "cal": 483, "pro": 36.2, "carb": 52.3, "fib": 8.0}, {"name": "Greek yogurt", "meal": "Afternoon Snack", "cal": 121, "pro": 13.0, "carb": 9.3, "fib": 0.0}], "2026-02-06": [{"name": "Scrambled eggs and toast", "meal": "Breakfast", "cal": 371, "pro": 21.2, "carb": 33.5, "fib": 1.8}, {"name": "Greek salad with grilled halloumi", "meal": "Lunch", "cal": 470, "pro": 22.4, "carb": 24.6, "fib": 4.5}, {"name": "Chicken stir fry with brown rice", "meal": "Dinner", "cal": 521, "pro": 39.5, "carb": 52.1, "fib": 5.4}, {"name": "Rice cakes with peanut butter", "meal": "Morning Snack", "cal": 200, "pro": 6.0, "carb": 28.0, "fib": 2.0}, {"name": "Hummus and veggie sticks", "meal": "Afternoon Snack", "cal": 199, "pro": 6.6, "carb": 24.3, "fib": 6.6}], "2026-02-07": [{"name": "Cottage cheese with fruit", "meal": "Breakfast", "cal": 324, "pro": 26.8, "carb": 35.7, "fib": 2.2}, {"name": "Beef and vegetable stir fry with rice", "meal": "Lunch", "cal": 584, "pro": 38.3, "carb": 62.4, "fib": 6.0}, {"name": "Baked cod with lemon, rice and salad", "meal": "Dinner", "cal": 560, "pro": 47.3, "carb": 53.8, "fib": 4.3}, {"name": "Greek yogurt", "meal": "Afternoon Snack", "cal": 143, "pro": 15.5, "carb": 11.0, "fib": 0.0}, {"name": "Cottage cheese with pineapple", "meal": "Evening Snack", "cal": 177, "pro": 19.9, "carb": 17.7, "fib": 0.0}], "2026-02-08": [{"name": "Smoothie bowl with seeds", "meal": "Breakfast", "cal": 362, "pro": 13.0, "carb": 53.9, "fib": 7.4}, {"name": "Beef and vegetable stir fry with rice", "meal": "Lunch", "cal": 629, "pro": 41.2, "carb": 67.3, "fib": 6.5}, {"name": "Grilled steak with mashed potatoes and broccoli", "meal": "Dinner", "cal": 648, "pro": 51.9, "carb": 43.9, "fib": 5.0}, {"name": "Apple and almond butter", "meal": "Morning Snack", "cal": 171, "pro": 4.5, "carb": 19.8, "fib": 3.6}, {"name": "Trail mix", "meal": "Afternoon Snack", "cal": 216, "pro": 6.5, "carb": 23.7, "fib": 3.2}], "2026-02-09": [{"name": "Greek yogurt with granola and berries", "meal": "Breakfast", "cal": 360, "pro": 19.0, "carb": 50.8, "fib": 3.2}, {"name": "Chicken burrito bowl", "meal": "Lunch", "cal": 651, "pro": 46.2, "carb": 71.4, "fib": 8.4}, {"name": "Grilled steak with mashed potatoes and broccoli", "meal": "Dinner", "cal": 574, "pro": 45.9, "carb": 38.8, "fib": 4.4}, {"name": "Protein bar", "meal": "Morning Snack", "cal": 243, "pro": 22.1, "carb": 26.6, "fib": 3.3}, {"name": "Jerky and apple slices", "meal": "Afternoon Snack", "cal": 186, "pro": 15.4, "carb": 21.9, "fib": 3.3}], "2026-02-10": [{"name": "Oatmeal with banana and honey", "meal": "Breakfast", "cal": 416, "pro": 13.1, "carb": 78.9, "fib": 6.6}, {"name": "Quinoa bowl with roasted vegetables", "meal": "Lunch", "cal": 480, "pro": 18.8, "carb": 64.7, "fib": 9.4}, {"name": "Baked cod with lemon, rice and salad", "meal": "Dinner", "cal": 470, "pro": 39.8, "carb": 45.2, "fib": 3.6}, {"name": "Banana", "meal": "Morning Snack", "cal": 117, "pro": 1.1, "carb": 30.1, "fib": 3.3}, {"name": "Jerky and apple slices", "meal": "Afternoon Snack", "cal": 156, "pro": 12.8, "carb": 18.3, "fib": 2.8}, {"name": "Casein protein shake", "meal": "Evening Snack", "cal": 152, "pro": 26.1, "carb": 6.5, "fib": 0.0}], "2026-02-11": [{"name": "Bacon and egg breakfast sandwich", "meal": "Breakfast", "cal": 515, "pro": 27.9, "carb": 45.0, "fib": 2.1}, {"name": "Shrimp tacos x2", "meal": "Lunch", "cal": 537, "pro": 32.2, "carb": 55.9, "fib": 5.4}, {"name": "Baked chicken thighs with roasted potatoes", "meal": "Dinner", "cal": 542, "pro": 44.1, "carb": 42.2, "fib": 4.6}, {"name": "Protein bar", "meal": "Morning Snack", "cal": 214, "pro": 19.4, "carb": 23.3, "fib": 2.9}, {"name": "Cottage cheese with pineapple", "meal": "Evening Snack", "cal": 174, "pro": 19.5, "carb": 17.4, "fib": 0.0}], "2026-02-12": [{"name": "Oatmeal with banana and honey", "meal": "Breakfast", "cal": 395, "pro": 12.5, "carb": 74.8, "fib": 6.2}, {"name": "Salmon and rice with steamed broccoli", "meal": "Lunch", "cal": 537, "pro": 44.1, "carb": 46.0, "fib": 4.8}, {"name": "Chicken stir fry with brown rice", "meal": "Dinner", "cal": 645, "pro": 48.9, "carb": 64.5, "fib": 6.7}, {"name": "String cheese and grapes", "meal": "Morning Snack", "cal": 154, "pro": 7.7, "carb": 17.4, "fib": 1.0}, {"name": "Rice cakes x2", "meal": "Evening Snack", "cal": 68, "pro": 2.0, "carb": 15.6, "fib": 0.0}], "2026-02-13": [{"name": "Avocado toast with poached eggs", "meal": "Breakfast", "cal": 365, "pro": 16.0, "carb": 32.0, "fib": 6.2}, {"name": "Greek salad with grilled halloumi", "meal": "Lunch", "cal": 413, "pro": 19.7, "carb": 21.7, "fib": 3.9}, {"name": "Turkey chili with cornbread", "meal": "Dinner", "cal": 620, "pro": 42.7, "carb": 66.3, "fib": 10.7}, {"name": "Banana", "meal": "Morning Snack", "cal": 108, "pro": 1.0, "carb": 27.7, "fib": 3.1}, {"name": "Rice cakes x2", "meal": "Evening Snack", "cal": 64, "pro": 1.8, "carb": 14.5, "fib": 0.0}], "2026-02-14": [{"name": "Protein pancakes with maple syrup", "meal": "Breakfast", "cal": 445, "pro": 27.1, "carb": 53.2, "fib": 2.9}, {"name": "Turkey and avocado wrap", "meal": "Lunch", "cal": 576, "pro": 37.7, "carb": 48.7, "fib": 6.6}, {"name": "Pork tenderloin with quinoa and green beans", "meal": "Dinner", "cal": 577, "pro": 51.5, "carb": 43.2, "fib": 6.2}, {"name": "Protein bar", "meal": "Morning Snack", "cal": 232, "pro": 21.1, "carb": 25.3, "fib": 3.2}, {"name": "Greek yogurt", "meal": "Afternoon Snack", "cal": 130, "pro": 14.0, "carb": 10.0, "fib": 0.0}], "2026-02-15": [{"name": "Bacon and egg breakfast sandwich", "meal": "Breakfast", "cal": 500, "pro": 27.1, "carb": 43.8, "fib": 2.1}, {"name": "Tuna pasta salad", "meal": "Lunch", "cal": 524, "pro": 37.0, "carb": 53.4, "fib": 4.1}, {"name": "Baked chicken thighs with roasted potatoes", "meal": "Dinner", "cal": 577, "pro": 46.9, "carb": 45.0, "fib": 4.9}, {"name": "Peanut butter on rice cakes", "meal": "Afternoon Snack", "cal": 185, "pro": 6.2, "carb": 22.9, "fib": 1.8}], "2026-02-16": [{"name": "Protein pancakes with maple syrup", "meal": "Breakfast", "cal": 461, "pro": 28.1, "carb": 55.1, "fib": 3.0}, {"name": "Shrimp tacos x2", "meal": "Lunch", "cal": 460, "pro": 27.6, "carb": 47.9, "fib": 4.6}, {"name": "Chicken stir fry with brown rice", "meal": "Dinner", "cal": 550, "pro": 41.7, "carb": 55.0, "fib": 5.7}, {"name": "Jerky and apple slices", "meal": "Afternoon Snack", "cal": 175, "pro": 14.4, "carb": 20.6, "fib": 3.1}, {"name": "Dark chocolate x2 squares", "meal": "Evening Snack", "cal": 108, "pro": 1.8, "carb": 12.6, "fib": 1.8}], "2026-02-17": [{"name": "Overnight oats with almond butter", "meal": "Breakfast", "cal": 431, "pro": 16.4, "carb": 55.4, "fib": 7.2}, {"name": "Turkey and avocado wrap", "meal": "Lunch", "cal": 514, "pro": 33.6, "carb": 43.5, "fib": 5.9}, {"name": "Baked cod with lemon, rice and salad", "meal": "Dinner", "cal": 529, "pro": 44.8, "carb": 50.9, "fib": 4.1}, {"name": "Jerky and apple slices", "meal": "Afternoon Snack", "cal": 178, "pro": 14.7, "carb": 20.9, "fib": 3.1}, {"name": "Warm milk with honey", "meal": "Evening Snack", "cal": 127, "pro": 5.9, "carb": 19.5, "fib": 0.0}], "2026-02-18": [{"name": "Protein pancakes with maple syrup", "meal": "Breakfast", "cal": 424, "pro": 25.8, "carb": 50.7, "fib": 2.8}, {"name": "Shrimp tacos x2", "meal": "Lunch", "cal": 502, "pro": 30.1, "carb": 52.2, "fib": 5.0}, {"name": "Grilled salmon with sweet potato and asparagus", "meal": "Dinner", "cal": 629, "pro": 46.6, "carb": 52.7, "fib": 7.1}], "2026-02-19": [{"name": "Smoothie bowl with seeds", "meal": "Breakfast", "cal": 432, "pro": 15.5, "carb": 64.3, "fib": 8.9}, {"name": "BLT sandwich with side salad", "meal": "Lunch", "cal": 503, "pro": 24.6, "carb": 47.2, "fib": 4.1}, {"name": "Turkey chili with cornbread", "meal": "Dinner", "cal": 635, "pro": 43.8, "carb": 67.8, "fib": 10.9}, {"name": "Banana", "meal": "Morning Snack", "cal": 113, "pro": 1.1, "carb": 29.1, "fib": 3.2}, {"name": "Cheese and crackers", "meal": "Afternoon Snack", "cal": 188, "pro": 7.9, "carb": 19.7, "fib": 1.0}], "2026-02-20": [{"name": "Veggie omelette with whole grain toast", "meal": "Breakfast", "cal": 379, "pro": 21.9, "carb": 29.9, "fib": 4.0}, {"name": "Quinoa bowl with roasted vegetables", "meal": "Lunch", "cal": 435, "pro": 17.0, "carb": 58.6, "fib": 8.5}, {"name": "Chicken stir fry with brown rice", "meal": "Dinner", "cal": 610, "pro": 46.3, "carb": 61.0, "fib": 6.3}, {"name": "Casein protein shake", "meal": "Evening Snack", "cal": 132, "pro": 22.7, "carb": 5.7, "fib": 0.0}], "2026-02-21": [{"name": "Scrambled eggs and toast", "meal": "Breakfast", "cal": 411, "pro": 23.5, "carb": 37.2, "fib": 2.0}, {"name": "Lentil soup with crusty bread", "meal": "Lunch", "cal": 434, "pro": 22.2, "carb": 64.7, "fib": 12.1}, {"name": "Shrimp and vegetable curry with rice", "meal": "Dinner", "cal": 501, "pro": 30.4, "carb": 57.3, "fib": 4.5}, {"name": "Banana", "meal": "Morning Snack", "cal": 102, "pro": 1.0, "carb": 26.3, "fib": 2.9}], "2026-02-22": [{"name": "Smoothie bowl with seeds", "meal": "Breakfast", "cal": 371, "pro": 13.3, "carb": 55.2, "fib": 7.6}, {"name": "Salmon and rice with steamed broccoli", "meal": "Lunch", "cal": 608, "pro": 49.9, "carb": 52.1, "fib": 5.4}, {"name": "Shrimp and vegetable curry with rice", "meal": "Dinner", "cal": 565, "pro": 34.3, "carb": 64.6, "fib": 5.0}, {"name": "Small bowl of cereal with milk", "meal": "Evening Snack", "cal": 222, "pro": 8.1, "carb": 38.4, "fib": 2.0}], "2026-02-23": [{"name": "Bacon and egg breakfast sandwich", "meal": "Breakfast", "cal": 506, "pro": 27.4, "carb": 44.3, "fib": 2.1}, {"name": "BLT sandwich with side salad", "meal": "Lunch", "cal": 539, "pro": 26.4, "carb": 50.6, "fib": 4.4}, {"name": "Chicken and vegetable soup with bread", "meal": "Dinner", "cal": 484, "pro": 36.3, "carb": 52.4, "fib": 8.1}, {"name": "Banana", "meal": "Morning Snack", "cal": 107, "pro": 1.0, "carb": 27.6, "fib": 3.1}, {"name": "Jerky and apple slices", "meal": "Afternoon Snack", "cal": 151, "pro": 12.4, "carb": 17.7, "fib": 2.7}, {"name": "Small bowl of cereal with milk", "meal": "Evening Snack", "cal": 216, "pro": 7.9, "carb": 37.3, "fib": 2.0}], "2026-02-24": [{"name": "Bacon and egg breakfast sandwich", "meal": "Breakfast", "cal": 454, "pro": 24.6, "carb": 39.8, "fib": 1.9}, {"name": "Salmon and rice with steamed broccoli", "meal": "Lunch", "cal": 527, "pro": 43.3, "carb": 45.1, "fib": 4.7}, {"name": "Chicken stir fry with brown rice", "meal": "Dinner", "cal": 576, "pro": 43.7, "carb": 57.6, "fib": 6.0}, {"name": "Apple and almond butter", "meal": "Morning Snack", "cal": 213, "pro": 5.6, "carb": 24.6, "fib": 4.5}, {"name": "Greek yogurt", "meal": "Afternoon Snack", "cal": 121, "pro": 13.1, "carb": 9.3, "fib": 0.0}, {"name": "Cottage cheese with pineapple", "meal": "Evening Snack", "cal": 171, "pro": 19.2, "carb": 17.1, "fib": 0.0}], "2026-02-25": [{"name": "Greek yogurt with granola and berries", "meal": "Breakfast", "cal": 338, "pro": 17.9, "carb": 47.7, "fib": 3.0}, {"name": "Turkey and avocado wrap", "meal": "Lunch", "cal": 528, "pro": 34.5, "carb": 44.7, "fib": 6.1}, {"name": "Pasta with marinara and turkey meatballs", "meal": "Dinner", "cal": 674, "pro": 41.6, "carb": 75.4, "fib": 5.9}, {"name": "String cheese and grapes", "meal": "Morning Snack", "cal": 170, "pro": 8.5, "carb": 19.2, "fib": 1.1}, {"name": "Hummus and veggie sticks", "meal": "Afternoon Snack", "cal": 185, "pro": 6.2, "carb": 22.6, "fib": 6.2}, {"name": "Small bowl of cereal with milk", "meal": "Evening Snack", "cal": 232, "pro": 8.4, "carb": 40.0, "fib": 2.1}], "2026-02-26": [{"name": "Bacon and egg breakfast sandwich", "meal": "Breakfast", "cal": 468, "pro": 25.4, "carb": 41.0, "fib": 2.0}, {"name": "Shrimp tacos x2", "meal": "Lunch", "cal": 464, "pro": 27.8, "carb": 48.2, "fib": 4.6}, {"name": "Chicken and vegetable soup with bread", "meal": "Dinner", "cal": 502, "pro": 37.6, "carb": 54.4, "fib": 8.4}], "2026-02-27": [{"name": "Cottage cheese with fruit", "meal": "Breakfast", "cal": 310, "pro": 25.6, "carb": 34.2, "fib": 2.1}, {"name": "Lentil soup with crusty bread", "meal": "Lunch", "cal": 433, "pro": 22.2, "carb": 64.5, "fib": 12.1}, {"name": "Baked cod with lemon, rice and salad", "meal": "Dinner", "cal": 504, "pro": 42.6, "carb": 48.4, "fib": 3.9}, {"name": "Rice cakes x2", "meal": "Evening Snack", "cal": 72, "pro": 2.1, "carb": 16.6, "fib": 0.0}], "2026-02-28": [{"name": "Overnight oats with almond butter", "meal": "Breakfast", "cal": 441, "pro": 16.8, "carb": 56.7, "fib": 7.3}, {"name": "Salmon and rice with steamed broccoli", "meal": "Lunch", "cal": 516, "pro": 42.4, "carb": 44.3, "fib": 4.6}, {"name": "Grilled steak with mashed potatoes and broccoli", "meal": "Dinner", "cal": 723, "pro": 57.8, "carb": 48.9, "fib": 5.6}, {"name": "String cheese and grapes", "meal": "Morning Snack", "cal": 164, "pro": 8.2, "carb": 18.5, "fib": 1.0}, {"name": "Cheese and crackers", "meal": "Afternoon Snack", "cal": 203, "pro": 8.5, "carb": 21.3, "fib": 1.1}, {"name": "Warm milk with honey", "meal": "Evening Snack", "cal": 128, "pro": 5.9, "carb": 19.7, "fib": 0.0}], "2026-03-01": [{"name": "Protein pancakes with maple syrup", "meal": "Breakfast", "cal": 488, "pro": 29.7, "carb": 58.3, "fib": 3.2}, {"name": "Greek salad with grilled halloumi", "meal": "Lunch", "cal": 431, "pro": 20.5, "carb": 22.6, "fib": 4.1}, {"name": "Shrimp and vegetable curry with rice", "meal": "Dinner", "cal": 538, "pro": 32.7, "carb": 61.5, "fib": 4.8}, {"name": "Edamame", "meal": "Morning Snack", "cal": 163, "pro": 13.0, "carb": 13.0, "fib": 5.4}], "2026-03-02": [{"name": "Avocado toast with poached eggs", "meal": "Breakfast", "cal": 415, "pro": 18.2, "carb": 36.5, "fib": 7.1}, {"name": "Chicken burrito bowl", "meal": "Lunch", "cal": 687, "pro": 48.7, "carb": 75.3, "fib": 8.9}, {"name": "Chicken stir fry with brown rice", "meal": "Dinner", "cal": 544, "pro": 41.3, "carb": 54.4, "fib": 5.6}, {"name": "Banana", "meal": "Morning Snack", "cal": 105, "pro": 1.0, "carb": 26.9, "fib": 3.0}, {"name": "Casein protein shake", "meal": "Evening Snack", "cal": 146, "pro": 25.1, "carb": 6.3, "fib": 0.0}], "2026-03-03": [{"name": "Avocado toast with poached eggs", "meal": "Breakfast", "cal": 426, "pro": 18.7, "carb": 37.4, "fib": 7.3}, {"name": "Lentil soup with crusty bread", "meal": "Lunch", "cal": 427, "pro": 21.9, "carb": 63.6, "fib": 11.9}, {"name": "Grilled steak with mashed potatoes and broccoli", "meal": "Dinner", "cal": 626, "pro": 50.1, "carb": 42.4, "fib": 4.8}, {"name": "Hard boiled eggs x2", "meal": "Morning Snack", "cal": 135, "pro": 11.6, "carb": 1.0, "fib": 0.0}, {"name": "Warm milk with honey", "meal": "Evening Snack", "cal": 123, "pro": 5.7, "carb": 18.9, "fib": 0.0}], "2026-03-04": [{"name": "Greek yogurt with granola and berries", "meal": "Breakfast", "cal": 315, "pro": 16.7, "carb": 44.4, "fib": 2.8}, {"name": "Shrimp tacos x2", "meal": "Lunch", "cal": 498, "pro": 29.9, "carb": 51.8, "fib": 5.0}, {"name": "Turkey chili with cornbread", "meal": "Dinner", "cal": 592, "pro": 40.9, "carb": 63.3, "fib": 10.2}, {"name": "String cheese and grapes", "meal": "Morning Snack", "cal": 178, "pro": 8.9, "carb": 20.1, "fib": 1.1}, {"name": "Peanut butter on rice cakes", "meal": "Afternoon Snack", "cal": 195, "pro": 6.5, "carb": 24.1, "fib": 1.9}, {"name": "Casein protein shake", "meal": "Evening Snack", "cal": 135, "pro": 23.2, "carb": 5.8, "fib": 0.0}], "2026-03-05": [{"name": "Greek yogurt with granola and berries", "meal": "Breakfast", "cal": 351, "pro": 18.6, "carb": 49.6, "fib": 3.1}, {"name": "BLT sandwich with side salad", "meal": "Lunch", "cal": 443, "pro": 21.7, "carb": 41.6, "fib": 3.6}, {"name": "Grilled salmon with sweet potato and asparagus", "meal": "Dinner", "cal": 631, "pro": 46.8, "carb": 52.9, "fib": 7.1}, {"name": "Trail mix", "meal": "Afternoon Snack", "cal": 199, "pro": 6.0, "carb": 21.9, "fib": 3.0}, {"name": "Dark chocolate x2 squares", "meal": "Evening Snack", "cal": 111, "pro": 1.8, "carb": 12.9, "fib": 1.8}], "2026-03-06": [{"name": "Bacon and egg breakfast sandwich", "meal": "Breakfast", "cal": 479, "pro": 25.9, "carb": 41.9, "fib": 2.0}, {"name": "Greek salad with grilled halloumi", "meal": "Lunch", "cal": 433, "pro": 20.6, "carb": 22.7, "fib": 4.1}, {"name": "Grilled salmon with sweet potato and asparagus", "meal": "Dinner", "cal": 568, "pro": 42.2, "carb": 47.7, "fib": 6.4}, {"name": "Peanut butter on rice cakes", "meal": "Afternoon Snack", "cal": 213, "pro": 7.1, "carb": 26.4, "fib": 2.0}], "2026-03-07": [{"name": "Protein pancakes with maple syrup", "meal": "Breakfast", "cal": 490, "pro": 29.9, "carb": 58.6, "fib": 3.2}, {"name": "Salmon and rice with steamed broccoli", "meal": "Lunch", "cal": 553, "pro": 45.5, "carb": 47.4, "fib": 4.9}, {"name": "Homemade beef burger with sweet potato fries", "meal": "Dinner", "cal": 685, "pro": 40.0, "carb": 64.7, "fib": 6.7}], "2026-03-08": [{"name": "Protein pancakes with maple syrup", "meal": "Breakfast", "cal": 474, "pro": 28.8, "carb": 56.7, "fib": 3.1}, {"name": "Chicken caesar wrap", "meal": "Lunch", "cal": 561, "pro": 39.5, "carb": 47.8, "fib": 3.1}, {"name": "Beef tacos with corn tortillas", "meal": "Dinner", "cal": 600, "pro": 35.6, "carb": 54.4, "fib": 5.6}, {"name": "Protein bar", "meal": "Morning Snack", "cal": 202, "pro": 18.4, "carb": 22.0, "fib": 2.8}, {"name": "Warm milk with honey", "meal": "Evening Snack", "cal": 128, "pro": 5.9, "carb": 19.8, "fib": 0.0}], "2026-03-09": [{"name": "Protein pancakes with maple syrup", "meal": "Breakfast", "cal": 507, "pro": 30.8, "carb": 60.6, "fib": 3.3}, {"name": "Beef and vegetable stir fry with rice", "meal": "Lunch", "cal": 592, "pro": 38.8, "carb": 63.3, "fib": 6.1}, {"name": "Pasta with marinara and turkey meatballs", "meal": "Dinner", "cal": 668, "pro": 41.2, "carb": 74.6, "fib": 5.9}, {"name": "Rice cakes x2", "meal": "Evening Snack", "cal": 65, "pro": 1.9, "carb": 14.9, "fib": 0.0}], "2026-03-10": [{"name": "Cottage cheese with fruit", "meal": "Breakfast", "cal": 319, "pro": 26.4, "carb": 35.2, "fib": 2.2}, {"name": "BLT sandwich with side salad", "meal": "Lunch", "cal": 446, "pro": 21.8, "carb": 41.9, "fib": 3.6}, {"name": "Turkey chili with cornbread", "meal": "Dinner", "cal": 553, "pro": 38.1, "carb": 59.1, "fib": 9.5}, {"name": "Banana", "meal": "Morning Snack", "cal": 116, "pro": 1.1, "carb": 29.9, "fib": 3.3}], "2026-03-11": [{"name": "Avocado toast with poached eggs", "meal": "Breakfast", "cal": 363, "pro": 16.0, "carb": 31.9, "fib": 6.2}, {"name": "Quinoa bowl with roasted vegetables", "meal": "Lunch", "cal": 511, "pro": 20.0, "carb": 68.9, "fib": 10.0}, {"name": "Chicken and vegetable soup with bread", "meal": "Dinner", "cal": 490, "pro": 36.8, "carb": 53.1, "fib": 8.2}, {"name": "Apple and almond butter", "meal": "Morning Snack", "cal": 213, "pro": 5.6, "carb": 24.6, "fib": 4.5}, {"name": "Jerky and apple slices", "meal": "Afternoon Snack", "cal": 183, "pro": 15.1, "carb": 21.5, "fib": 3.2}, {"name": "Rice cakes x2", "meal": "Evening Snack", "cal": 62, "pro": 1.8, "carb": 14.2, "fib": 0.0}], "2026-03-12": [{"name": "Overnight oats with almond butter", "meal": "Breakfast", "cal": 467, "pro": 17.8, "carb": 60.1, "fib": 7.8}, {"name": "BLT sandwich with side salad", "meal": "Lunch", "cal": 472, "pro": 23.1, "carb": 44.3, "fib": 3.9}, {"name": "Pork tenderloin with quinoa and green beans", "meal": "Dinner", "cal": 536, "pro": 47.9, "carb": 40.2, "fib": 5.7}, {"name": "Protein shake", "meal": "Afternoon Snack", "cal": 195, "pro": 27.1, "carb": 8.7, "fib": 1.1}], "2026-03-13": [{"name": "Overnight oats with almond butter", "meal": "Breakfast", "cal": 378, "pro": 14.4, "carb": 48.7, "fib": 6.3}, {"name": "Chicken caesar wrap", "meal": "Lunch", "cal": 517, "pro": 36.4, "carb": 44.0, "fib": 2.9}, {"name": "Shrimp and vegetable curry with rice", "meal": "Dinner", "cal": 609, "pro": 37.0, "carb": 69.6, "fib": 5.4}], "2026-03-14": [{"name": "Cottage cheese with fruit", "meal": "Breakfast", "cal": 308, "pro": 25.5, "carb": 34.0, "fib": 2.1}, {"name": "Beef and vegetable stir fry with rice", "meal": "Lunch", "cal": 572, "pro": 37.5, "carb": 61.1, "fib": 5.9}, {"name": "Grilled salmon with sweet potato and asparagus", "meal": "Dinner", "cal": 576, "pro": 42.7, "carb": 48.3, "fib": 6.5}, {"name": "Handful of mixed nuts", "meal": "Morning Snack", "cal": 187, "pro": 5.5, "carb": 8.8, "fib": 2.2}, {"name": "Trail mix", "meal": "Afternoon Snack", "cal": 218, "pro": 6.5, "carb": 24.0, "fib": 3.3}, {"name": "Warm milk with honey", "meal": "Evening Snack", "cal": 118, "pro": 5.5, "carb": 18.2, "fib": 0.0}], "2026-03-15": [{"name": "Scrambled eggs and toast", "meal": "Breakfast", "cal": 392, "pro": 22.4, "carb": 35.5, "fib": 1.9}, {"name": "Turkey and avocado wrap", "meal": "Lunch", "cal": 515, "pro": 33.7, "carb": 43.6, "fib": 5.9}, {"name": "Chicken stir fry with brown rice", "meal": "Dinner", "cal": 601, "pro": 45.6, "carb": 60.1, "fib": 6.2}, {"name": "Handful of mixed nuts", "meal": "Morning Snack", "cal": 170, "pro": 5.0, "carb": 8.0, "fib": 2.0}], "2026-03-16": [{"name": "Veggie omelette with whole grain toast", "meal": "Breakfast", "cal": 348, "pro": 20.1, "carb": 27.4, "fib": 3.7}, {"name": "Quinoa bowl with roasted vegetables", "meal": "Lunch", "cal": 507, "pro": 19.8, "carb": 68.3, "fib": 9.9}, {"name": "Grilled steak with mashed potatoes and broccoli", "meal": "Dinner", "cal": 688, "pro": 55.1, "carb": 46.6, "fib": 5.3}, {"name": "Casein protein shake", "meal": "Evening Snack", "cal": 152, "pro": 26.1, "carb": 6.5, "fib": 0.0}], "2026-03-17": [{"name": "Avocado toast with poached eggs", "meal": "Breakfast", "cal": 432, "pro": 19.0, "carb": 38.0, "fib": 7.4}, {"name": "Greek salad with grilled halloumi", "meal": "Lunch", "cal": 428, "pro": 20.4, "carb": 22.4, "fib": 4.1}, {"name": "Baked cod with lemon, rice and salad", "meal": "Dinner", "cal": 519, "pro": 43.9, "carb": 49.9, "fib": 4.0}, {"name": "Hummus and veggie sticks", "meal": "Afternoon Snack", "cal": 178, "pro": 5.9, "carb": 21.7, "fib": 5.9}], "2026-03-18": [{"name": "Protein pancakes with maple syrup", "meal": "Breakfast", "cal": 468, "pro": 28.5, "carb": 55.9, "fib": 3.1}, {"name": "Quinoa bowl with roasted vegetables", "meal": "Lunch", "cal": 499, "pro": 19.5, "carb": 67.3, "fib": 9.8}, {"name": "Shrimp and vegetable curry with rice", "meal": "Dinner", "cal": 499, "pro": 30.3, "carb": 57.0, "fib": 4.5}, {"name": "Edamame", "meal": "Morning Snack", "cal": 157, "pro": 12.6, "carb": 12.6, "fib": 5.2}], "2026-03-19": [{"name": "Oatmeal with banana and honey", "meal": "Breakfast", "cal": 346, "pro": 10.9, "carb": 65.5, "fib": 5.5}, {"name": "Greek salad with grilled halloumi", "meal": "Lunch", "cal": 403, "pro": 19.2, "carb": 21.1, "fib": 3.8}, {"name": "Chicken stir fry with brown rice", "meal": "Dinner", "cal": 632, "pro": 48.0, "carb": 63.2, "fib": 6.5}, {"name": "Warm milk with honey", "meal": "Evening Snack", "cal": 118, "pro": 5.4, "carb": 18.1, "fib": 0.0}], "2026-03-20": [{"name": "Avocado toast with poached eggs", "meal": "Breakfast", "cal": 394, "pro": 17.3, "carb": 34.6, "fib": 6.7}, {"name": "Shrimp tacos x2", "meal": "Lunch", "cal": 488, "pro": 29.3, "carb": 50.7, "fib": 4.9}, {"name": "Chicken stir fry with brown rice", "meal": "Dinner", "cal": 629, "pro": 47.7, "carb": 62.9, "fib": 6.5}, {"name": "Small bowl of cereal with milk", "meal": "Evening Snack", "cal": 239, "pro": 8.7, "carb": 41.3, "fib": 2.2}], "2026-03-21": [{"name": "Scrambled eggs and toast", "meal": "Breakfast", "cal": 393, "pro": 22.5, "carb": 35.6, "fib": 1.9}, {"name": "Beef and vegetable stir fry with rice", "meal": "Lunch", "cal": 639, "pro": 41.8, "carb": 68.3, "fib": 6.6}, {"name": "Pasta with marinara and turkey meatballs", "meal": "Dinner", "cal": 720, "pro": 44.5, "carb": 80.5, "fib": 6.4}, {"name": "Warm milk with honey", "meal": "Evening Snack", "cal": 145, "pro": 6.7, "carb": 22.3, "fib": 0.0}], "2026-03-22": [{"name": "Smoothie bowl with seeds", "meal": "Breakfast", "cal": 418, "pro": 15.0, "carb": 62.1, "fib": 8.6}, {"name": "Chicken caesar wrap", "meal": "Lunch", "cal": 522, "pro": 36.7, "carb": 44.4, "fib": 2.9}, {"name": "Shrimp and vegetable curry with rice", "meal": "Dinner", "cal": 512, "pro": 31.1, "carb": 58.6, "fib": 4.6}, {"name": "Banana", "meal": "Morning Snack", "cal": 107, "pro": 1.0, "carb": 27.4, "fib": 3.0}, {"name": "Peanut butter on rice cakes", "meal": "Afternoon Snack", "cal": 194, "pro": 6.5, "carb": 24.0, "fib": 1.8}, {"name": "Casein protein shake", "meal": "Evening Snack", "cal": 126, "pro": 21.6, "carb": 5.4, "fib": 0.0}], "2026-03-23": [{"name": "Avocado toast with poached eggs", "meal": "Breakfast", "cal": 406, "pro": 17.8, "carb": 35.7, "fib": 6.9}, {"name": "Beef and vegetable stir fry with rice", "meal": "Lunch", "cal": 512, "pro": 33.5, "carb": 54.7, "fib": 5.3}, {"name": "Homemade beef burger with sweet potato fries", "meal": "Dinner", "cal": 789, "pro": 46.0, "carb": 74.5, "fib": 7.7}, {"name": "Jerky and apple slices", "meal": "Afternoon Snack", "cal": 172, "pro": 14.2, "carb": 20.2, "fib": 3.0}, {"name": "Cottage cheese with pineapple", "meal": "Evening Snack", "cal": 158, "pro": 17.7, "carb": 15.8, "fib": 0.0}], "2026-03-24": [{"name": "Protein pancakes with maple syrup", "meal": "Breakfast", "cal": 515, "pro": 31.4, "carb": 61.6, "fib": 3.4}, {"name": "BLT sandwich with side salad", "meal": "Lunch", "cal": 444, "pro": 21.7, "carb": 41.7, "fib": 3.6}, {"name": "Shrimp and vegetable curry with rice", "meal": "Dinner", "cal": 570, "pro": 34.6, "carb": 65.1, "fib": 5.1}, {"name": "String cheese and grapes", "meal": "Morning Snack", "cal": 179, "pro": 8.9, "carb": 20.1, "fib": 1.1}, {"name": "Greek yogurt", "meal": "Afternoon Snack", "cal": 115, "pro": 12.4, "carb": 8.9, "fib": 0.0}], "2026-03-25": [{"name": "Cottage cheese with fruit", "meal": "Breakfast", "cal": 307, "pro": 25.4, "carb": 33.9, "fib": 2.1}, {"name": "Chicken caesar wrap", "meal": "Lunch", "cal": 576, "pro": 40.5, "carb": 49.0, "fib": 3.2}, {"name": "Pasta with marinara and turkey meatballs", "meal": "Dinner", "cal": 697, "pro": 43.1, "carb": 78.0, "fib": 6.2}], "2026-03-26": [{"name": "Greek yogurt with granola and berries", "meal": "Breakfast", "cal": 350, "pro": 18.6, "carb": 49.5, "fib": 3.1}, {"name": "Beef and vegetable stir fry with rice", "meal": "Lunch", "cal": 600, "pro": 39.3, "carb": 64.2, "fib": 6.2}, {"name": "Baked chicken thighs with roasted potatoes", "meal": "Dinner", "cal": 631, "pro": 51.3, "carb": 49.2, "fib": 5.3}], "2026-03-27": [{"name": "Protein pancakes with maple syrup", "meal": "Breakfast", "cal": 419, "pro": 25.5, "carb": 50.1, "fib": 2.7}, {"name": "Chicken burrito bowl", "meal": "Lunch", "cal": 676, "pro": 48.0, "carb": 74.1, "fib": 8.7}, {"name": "Pork tenderloin with quinoa and green beans", "meal": "Dinner", "cal": 564, "pro": 50.4, "carb": 42.3, "fib": 6.0}, {"name": "String cheese and grapes", "meal": "Morning Snack", "cal": 173, "pro": 8.6, "carb": 19.4, "fib": 1.1}, {"name": "Greek yogurt", "meal": "Afternoon Snack", "cal": 143, "pro": 15.4, "carb": 11.0, "fib": 0.0}], "2026-03-28": [{"name": "Scrambled eggs and toast", "meal": "Breakfast", "cal": 384, "pro": 21.9, "carb": 34.7, "fib": 1.8}, {"name": "Quinoa bowl with roasted vegetables", "meal": "Lunch", "cal": 500, "pro": 19.6, "carb": 67.4, "fib": 9.8}, {"name": "Turkey chili with cornbread", "meal": "Dinner", "cal": 604, "pro": 41.7, "carb": 64.6, "fib": 10.4}, {"name": "Trail mix", "meal": "Afternoon Snack", "cal": 222, "pro": 6.7, "carb": 24.5, "fib": 3.3}], "2026-03-29": [{"name": "Avocado toast with poached eggs", "meal": "Breakfast", "cal": 418, "pro": 18.4, "carb": 36.7, "fib": 7.1}, {"name": "Beef and vegetable stir fry with rice", "meal": "Lunch", "cal": 641, "pro": 42.0, "carb": 68.6, "fib": 6.6}, {"name": "Chicken stir fry with brown rice", "meal": "Dinner", "cal": 604, "pro": 45.8, "carb": 60.4, "fib": 6.3}, {"name": "Edamame", "meal": "Morning Snack", "cal": 133, "pro": 10.6, "carb": 10.6, "fib": 4.4}, {"name": "Rice cakes x2", "meal": "Evening Snack", "cal": 67, "pro": 1.9, "carb": 15.3, "fib": 0.0}], "2026-03-30": [{"name": "Scrambled eggs and toast", "meal": "Breakfast", "cal": 384, "pro": 21.9, "carb": 34.7, "fib": 1.8}, {"name": "Grilled chicken salad with vinaigrette", "meal": "Lunch", "cal": 457, "pro": 40.0, "carb": 17.2, "fib": 4.8}, {"name": "Homemade beef burger with sweet potato fries", "meal": "Dinner", "cal": 654, "pro": 38.1, "carb": 61.7, "fib": 6.4}, {"name": "Casein protein shake", "meal": "Evening Snack", "cal": 153, "pro": 26.2, "carb": 6.6, "fib": 0.0}], "2026-03-31": [{"name": "Greek yogurt with granola and berries", "meal": "Breakfast", "cal": 371, "pro": 19.7, "carb": 52.4, "fib": 3.3}, {"name": "Beef and vegetable stir fry with rice", "meal": "Lunch", "cal": 524, "pro": 34.3, "carb": 56.0, "fib": 5.4}, {"name": "Homemade beef burger with sweet potato fries", "meal": "Dinner", "cal": 740, "pro": 43.2, "carb": 69.9, "fib": 7.2}, {"name": "String cheese and grapes", "meal": "Morning Snack", "cal": 142, "pro": 7.1, "carb": 16.0, "fib": 0.9}], "2026-04-01": [{"name": "Veggie omelette with whole grain toast", "meal": "Breakfast", "cal": 417, "pro": 24.1, "carb": 32.9, "fib": 4.4}, {"name": "Beef and vegetable stir fry with rice", "meal": "Lunch", "cal": 560, "pro": 36.7, "carb": 59.9, "fib": 5.8}, {"name": "Shrimp and vegetable curry with rice", "meal": "Dinner", "cal": 530, "pro": 32.2, "carb": 60.6, "fib": 4.7}, {"name": "Protein bar", "meal": "Morning Snack", "cal": 244, "pro": 22.2, "carb": 26.6, "fib": 3.3}], "2026-04-02": [{"name": "Smoothie bowl with seeds", "meal": "Breakfast", "cal": 366, "pro": 13.1, "carb": 54.4, "fib": 7.5}, {"name": "Tuna pasta salad", "meal": "Lunch", "cal": 545, "pro": 38.5, "carb": 55.6, "fib": 4.3}, {"name": "Pasta with marinara and turkey meatballs", "meal": "Dinner", "cal": 610, "pro": 37.7, "carb": 68.1, "fib": 5.4}, {"name": "Rice cakes with peanut butter", "meal": "Morning Snack", "cal": 204, "pro": 6.1, "carb": 28.6, "fib": 2.0}, {"name": "Peanut butter on rice cakes", "meal": "Afternoon Snack", "cal": 229, "pro": 7.6, "carb": 28.3, "fib": 2.2}], "2026-04-03": [{"name": "Greek yogurt with granola and berries", "meal": "Breakfast", "cal": 343, "pro": 18.2, "carb": 48.5, "fib": 3.0}, {"name": "Tuna pasta salad", "meal": "Lunch", "cal": 462, "pro": 32.6, "carb": 47.1, "fib": 3.6}, {"name": "Grilled salmon with sweet potato and asparagus", "meal": "Dinner", "cal": 565, "pro": 41.9, "carb": 47.4, "fib": 6.4}, {"name": "Hard boiled eggs x2", "meal": "Morning Snack", "cal": 150, "pro": 12.8, "carb": 1.1, "fib": 0.0}, {"name": "Casein protein shake", "meal": "Evening Snack", "cal": 143, "pro": 24.5, "carb": 6.1, "fib": 0.0}], "2026-04-04": [{"name": "Scrambled eggs and toast", "meal": "Breakfast", "cal": 445, "pro": 25.4, "carb": 40.2, "fib": 2.1}, {"name": "BLT sandwich with side salad", "meal": "Lunch", "cal": 484, "pro": 23.7, "carb": 45.4, "fib": 4.0}, {"name": "Pork tenderloin with quinoa and green beans", "meal": "Dinner", "cal": 562, "pro": 50.2, "carb": 42.1, "fib": 6.0}, {"name": "Protein bar", "meal": "Morning Snack", "cal": 217, "pro": 19.8, "carb": 23.7, "fib": 3.0}, {"name": "Hummus and veggie sticks", "meal": "Afternoon Snack", "cal": 199, "pro": 6.6, "carb": 24.4, "fib": 6.6}, {"name": "Cottage cheese with pineapple", "meal": "Evening Snack", "cal": 169, "pro": 19.0, "carb": 16.9, "fib": 0.0}], "2026-04-05": [{"name": "Bacon and egg breakfast sandwich", "meal": "Breakfast", "cal": 472, "pro": 25.5, "carb": 41.3, "fib": 2.0}, {"name": "Turkey and avocado wrap", "meal": "Lunch", "cal": 519, "pro": 33.9, "carb": 43.9, "fib": 6.0}, {"name": "Homemade beef burger with sweet potato fries", "meal": "Dinner", "cal": 646, "pro": 37.7, "carb": 61.0, "fib": 6.3}, {"name": "Protein shake", "meal": "Afternoon Snack", "cal": 172, "pro": 23.9, "carb": 7.7, "fib": 1.0}], "2026-04-06": [{"name": "Cottage cheese with fruit", "meal": "Breakfast", "cal": 292, "pro": 24.2, "carb": 32.2, "fib": 2.0}, {"name": "BLT sandwich with side salad", "meal": "Lunch", "cal": 491, "pro": 24.0, "carb": 46.1, "fib": 4.0}, {"name": "Shrimp and vegetable curry with rice", "meal": "Dinner", "cal": 506, "pro": 30.7, "carb": 57.8, "fib": 4.5}, {"name": "Small bowl of cereal with milk", "meal": "Evening Snack", "cal": 200, "pro": 7.3, "carb": 34.5, "fib": 1.8}], "2026-04-07": [{"name": "Bacon and egg breakfast sandwich", "meal": "Breakfast", "cal": 461, "pro": 25.0, "carb": 40.4, "fib": 1.9}, {"name": "BLT sandwich with side salad", "meal": "Lunch", "cal": 478, "pro": 23.4, "carb": 44.9, "fib": 3.9}, {"name": "Turkey chili with cornbread", "meal": "Dinner", "cal": 524, "pro": 36.1, "carb": 56.0, "fib": 9.0}, {"name": "Trail mix", "meal": "Afternoon Snack", "cal": 191, "pro": 5.7, "carb": 21.0, "fib": 2.9}], "2026-04-08": [{"name": "Bacon and egg breakfast sandwich", "meal": "Breakfast", "cal": 434, "pro": 23.5, "carb": 37.9, "fib": 1.8}, {"name": "Shrimp tacos x2", "meal": "Lunch", "cal": 485, "pro": 29.1, "carb": 50.4, "fib": 4.8}, {"name": "Beef tacos with corn tortillas", "meal": "Dinner", "cal": 649, "pro": 38.5, "carb": 58.8, "fib": 6.1}, {"name": "Hard boiled eggs x2", "meal": "Morning Snack", "cal": 146, "pro": 12.5, "carb": 1.0, "fib": 0.0}, {"name": "Trail mix", "meal": "Afternoon Snack", "cal": 193, "pro": 5.8, "carb": 21.2, "fib": 2.9}, {"name": "Small bowl of cereal with milk", "meal": "Evening Snack", "cal": 243, "pro": 8.8, "carb": 42.0, "fib": 2.2}], "2026-04-09": [{"name": "Veggie omelette with whole grain toast", "meal": "Breakfast", "cal": 354, "pro": 20.5, "carb": 27.9, "fib": 3.7}, {"name": "Beef and vegetable stir fry with rice", "meal": "Lunch", "cal": 578, "pro": 37.8, "carb": 61.7, "fib": 6.0}, {"name": "Chicken stir fry with brown rice", "meal": "Dinner", "cal": 559, "pro": 42.4, "carb": 55.9, "fib": 5.8}, {"name": "Hard boiled eggs x2", "meal": "Morning Snack", "cal": 127, "pro": 10.9, "carb": 0.9, "fib": 0.0}, {"name": "Greek yogurt", "meal": "Afternoon Snack", "cal": 132, "pro": 14.2, "carb": 10.2, "fib": 0.0}, {"name": "Warm milk with honey", "meal": "Evening Snack", "cal": 141, "pro": 6.5, "carb": 21.7, "fib": 0.0}], "2026-04-10": [{"name": "Avocado toast with poached eggs", "meal": "Breakfast", "cal": 364, "pro": 16.0, "carb": 31.9, "fib": 6.2}, {"name": "Chicken caesar wrap", "meal": "Lunch", "cal": 566, "pro": 39.8, "carb": 48.2, "fib": 3.1}, {"name": "Baked chicken thighs with roasted potatoes", "meal": "Dinner", "cal": 650, "pro": 52.9, "carb": 50.7, "fib": 5.5}, {"name": "Greek yogurt", "meal": "Afternoon Snack", "cal": 115, "pro": 12.3, "carb": 8.8, "fib": 0.0}], "2026-04-11": [{"name": "Veggie omelette with whole grain toast", "meal": "Breakfast", "cal": 354, "pro": 20.5, "carb": 27.9, "fib": 3.7}, {"name": "Salmon and rice with steamed broccoli", "meal": "Lunch", "cal": 554, "pro": 45.5, "carb": 47.5, "fib": 4.9}, {"name": "Beef tacos with corn tortillas", "meal": "Dinner", "cal": 620, "pro": 36.8, "carb": 56.2, "fib": 5.8}, {"name": "Hard boiled eggs x2", "meal": "Morning Snack", "cal": 149, "pro": 12.8, "carb": 1.1, "fib": 0.0}, {"name": "Rice cakes x2", "meal": "Evening Snack", "cal": 72, "pro": 2.0, "carb": 16.4, "fib": 0.0}], "2026-04-12": [{"name": "Bacon and egg breakfast sandwich", "meal": "Breakfast", "cal": 478, "pro": 25.9, "carb": 41.9, "fib": 2.0}, {"name": "BLT sandwich with side salad", "meal": "Lunch", "cal": 480, "pro": 23.5, "carb": 45.1, "fib": 3.9}, {"name": "Pasta with marinara and turkey meatballs", "meal": "Dinner", "cal": 722, "pro": 44.6, "carb": 80.7, "fib": 6.4}, {"name": "Protein bar", "meal": "Morning Snack", "cal": 212, "pro": 19.3, "carb": 23.1, "fib": 2.9}, {"name": "Protein shake", "meal": "Afternoon Snack", "cal": 171, "pro": 23.7, "carb": 7.6, "fib": 0.9}, {"name": "Small bowl of cereal with milk", "meal": "Evening Snack", "cal": 225, "pro": 8.2, "carb": 38.8, "fib": 2.0}], "2026-04-13": [{"name": "Protein pancakes with maple syrup", "meal": "Breakfast", "cal": 490, "pro": 29.8, "carb": 58.5, "fib": 3.2}, {"name": "Chicken caesar wrap", "meal": "Lunch", "cal": 513, "pro": 36.1, "carb": 43.7, "fib": 2.8}, {"name": "Chicken stir fry with brown rice", "meal": "Dinner", "cal": 511, "pro": 38.8, "carb": 51.1, "fib": 5.3}, {"name": "Jerky and apple slices", "meal": "Afternoon Snack", "cal": 167, "pro": 13.8, "carb": 19.7, "fib": 3.0}, {"name": "Casein protein shake", "meal": "Evening Snack", "cal": 136, "pro": 23.3, "carb": 5.8, "fib": 0.0}], "2026-04-14": [{"name": "Oatmeal with banana and honey", "meal": "Breakfast", "cal": 374, "pro": 11.8, "carb": 70.9, "fib": 5.9}, {"name": "BLT sandwich with side salad", "meal": "Lunch", "cal": 540, "pro": 26.4, "carb": 50.6, "fib": 4.4}, {"name": "Pork tenderloin with quinoa and green beans", "meal": "Dinner", "cal": 570, "pro": 50.9, "carb": 42.8, "fib": 6.1}, {"name": "Cheese and crackers", "meal": "Afternoon Snack", "cal": 186, "pro": 7.8, "carb": 19.5, "fib": 1.0}], "2026-04-15": [{"name": "Overnight oats with almond butter", "meal": "Breakfast", "cal": 453, "pro": 17.3, "carb": 58.3, "fib": 7.6}, {"name": "Lentil soup with crusty bread", "meal": "Lunch", "cal": 387, "pro": 19.8, "carb": 57.7, "fib": 10.8}, {"name": "Chicken stir fry with brown rice", "meal": "Dinner", "cal": 544, "pro": 41.3, "carb": 54.4, "fib": 5.6}, {"name": "Cheese and crackers", "meal": "Afternoon Snack", "cal": 185, "pro": 7.8, "carb": 19.5, "fib": 1.0}], "2026-04-16": [{"name": "Scrambled eggs and toast", "meal": "Breakfast", "cal": 423, "pro": 24.2, "carb": 38.3, "fib": 2.0}, {"name": "Quinoa bowl with roasted vegetables", "meal": "Lunch", "cal": 505, "pro": 19.8, "carb": 68.0, "fib": 9.9}, {"name": "Pork tenderloin with quinoa and green beans", "meal": "Dinner", "cal": 540, "pro": 48.2, "carb": 40.5, "fib": 5.8}, {"name": "Small bowl of cereal with milk", "meal": "Evening Snack", "cal": 237, "pro": 8.6, "carb": 40.9, "fib": 2.2}], "2026-04-17": [{"name": "Greek yogurt with granola and berries", "meal": "Breakfast", "cal": 377, "pro": 19.9, "carb": 53.2, "fib": 3.3}, {"name": "Beef and vegetable stir fry with rice", "meal": "Lunch", "cal": 579, "pro": 37.9, "carb": 61.9, "fib": 6.0}, {"name": "Chicken and vegetable soup with bread", "meal": "Dinner", "cal": 510, "pro": 38.2, "carb": 55.2, "fib": 8.5}, {"name": "Edamame", "meal": "Morning Snack", "cal": 157, "pro": 12.5, "carb": 12.5, "fib": 5.2}, {"name": "Cheese and crackers", "meal": "Afternoon Snack", "cal": 197, "pro": 8.3, "carb": 20.7, "fib": 1.0}], "2026-04-18": [{"name": "Avocado toast with poached eggs", "meal": "Breakfast", "cal": 439, "pro": 19.3, "carb": 38.6, "fib": 7.5}, {"name": "Greek salad with grilled halloumi", "meal": "Lunch", "cal": 375, "pro": 17.9, "carb": 19.7, "fib": 3.6}, {"name": "Grilled steak with mashed potatoes and broccoli", "meal": "Dinner", "cal": 584, "pro": 46.7, "carb": 39.5, "fib": 4.5}, {"name": "Edamame", "meal": "Morning Snack", "cal": 148, "pro": 11.9, "carb": 11.9, "fib": 4.9}, {"name": "Cottage cheese with pineapple", "meal": "Evening Snack", "cal": 155, "pro": 17.4, "carb": 15.5, "fib": 0.0}]}, "weights": {"2026-01-19": 210.5, "2026-01-20": 209.7, "2026-01-21": 208.9, "2026-01-22": 210.0, "2026-01-23": 209.9, "2026-01-24": 210.5, "2026-01-25": 209.6, "2026-01-26": 209.1, "2026-01-27": 208.8, "2026-01-28": 208.7, "2026-01-29": 207.8, "2026-01-30": 208.6, "2026-01-31": 209.3, "2026-02-02": 207.0, "2026-02-03": 208.4, "2026-02-06": 207.2, "2026-02-07": 207.9, "2026-02-08": 206.4, "2026-02-10": 207.4, "2026-02-11": 207.3, "2026-02-12": 207.0, "2026-02-13": 205.2, "2026-02-14": 206.5, "2026-02-15": 205.8, "2026-02-16": 205.4, "2026-02-17": 206.0, "2026-02-18": 205.4, "2026-02-19": 206.2, "2026-02-20": 206.5, "2026-02-21": 205.9, "2026-02-22": 206.4, "2026-02-23": 206.4, "2026-02-24": 206.5, "2026-02-25": 206.3, "2026-02-26": 206.4, "2026-02-27": 206.9, "2026-03-01": 206.8, "2026-03-02": 206.4, "2026-03-03": 205.1, "2026-03-04": 206.6, "2026-03-05": 205.5, "2026-03-07": 206.3, "2026-03-08": 205.4, "2026-03-09": 206.1, "2026-03-10": 206.2, "2026-03-11": 206.1, "2026-03-12": 205.4, "2026-03-13": 206.0, "2026-03-14": 207.3, "2026-03-15": 205.7, "2026-03-16": 205.4, "2026-03-17": 205.9, "2026-03-18": 205.2, "2026-03-19": 205.0, "2026-03-20": 206.3, "2026-03-21": 205.5, "2026-03-22": 205.7, "2026-03-23": 205.4, "2026-03-24": 204.9, "2026-03-25": 205.4, "2026-03-26": 204.8, "2026-03-28": 205.7, "2026-03-29": 204.4, "2026-03-30": 204.8, "2026-03-31": 204.0, "2026-04-01": 204.6, "2026-04-02": 205.2, "2026-04-03": 204.5, "2026-04-05": 204.1, "2026-04-06": 204.8, "2026-04-07": 204.7, "2026-04-08": 204.9, "2026-04-09": 204.1, "2026-04-10": 204.2, "2026-04-11": 203.2, "2026-04-12": 204.2, "2026-04-13": 203.4, "2026-04-14": 202.3, "2026-04-15": 203.2, "2026-04-17": 202.9, "2026-04-18": 202.1}, "goals": {"cal": 2000, "pro": 150, "carb": 200, "fiber": 30, "weight": 200}};
+  // Only inject if localStorage is empty (don't overwrite real data)
+  if (!localStorage.getItem('ht_meals') && !localStorage.getItem('ht_weights')) {
+    localStorage.setItem('ht_meals',   JSON.stringify(d.meals));
+    localStorage.setItem('ht_weights', JSON.stringify(d.weights));
+    localStorage.setItem('ht_goals',   JSON.stringify(d.goals));
+  }
+})();
+</script>
 <script>
 // ── State ──────────────────────────────────────────────────────
 let S = { meals:{}, weights:{}, goals:{cal:2000,pro:150,carb:200,fiber:30,weight:null}, currentDay: todayKey() };
@@ -565,7 +848,6 @@ function renderDay() {
   const k = S.currentDay;
   const isToday = k === todayKey();
 
-  // Date nav labels
   ['log','hist'].forEach(prefix=>{
     const dl = document.getElementById(prefix+'-day-label');
     const fl = document.getElementById(prefix+'-full-label');
@@ -573,7 +855,6 @@ function renderDay() {
     if(fl) fl.textContent = fmtFull(k);
   });
 
-  // Next button state
   const nextLogBtn = document.getElementById('next-day-log');
   const nextHistBtn = document.getElementById('next-day-hist');
   if(nextLogBtn) nextLogBtn.classList.toggle('disabled', isToday);
@@ -583,7 +864,6 @@ function renderDay() {
   let cal=0,pro=0,carb=0,fib=0;
   meals.forEach(m=>{cal+=+m.cal||0;pro+=+m.pro||0;carb+=+m.carb||0;fib+=+m.fib||0;});
 
-  // Totals banner
   const goalCal = S.goals.cal || 0;
   const pct = goalCal ? Math.min(100, Math.round((cal/goalCal)*100)) : null;
   const barColor = pct >= 100 ? '#ff5c5c' : pct >= 80 ? '#f0a500' : '#22c87a';
@@ -597,7 +877,7 @@ function renderDay() {
         <div class="total-item"><div class="total-val">${carb.toFixed(1)}</div><div class="total-lbl">carbs g</div></div>
         <div class="total-item"><div class="total-val">${fib.toFixed(1)}</div><div class="total-lbl">fiber g</div></div>
       </div>
-      ${goalCal ? `<div class="cal-progress">
+      ${(goalCal && SS.showProgress) ? `<div class="cal-progress">
         <div class="cal-progress-track"><div class="cal-progress-fill" style="width:${pct}%;background:${barColor};"></div></div>
         <div class="cal-progress-meta"><span>${pct}% of goal</span><span>${Math.round(cal)} / ${goalCal} kcal</span></div>
       </div>` : ''}
@@ -608,14 +888,12 @@ function renderDay() {
   if(td) td.innerHTML = totHTML;
   if(ht) ht.innerHTML = totHTML;
 
-  // Streak
   const streak = calcStreak();
   const sd = document.getElementById('streak-display');
-  if(sd && streak >= 2) {
+  if(sd && streak >= 2 && SS.showStreak) {
     sd.innerHTML = `<div class="streak"><span class="streak-icon">🔥</span><span class="streak-text">${streak}-day logging streak</span></div>`;
   } else if(sd) { sd.innerHTML=''; }
 
-  // Meal list
   const mealHTML = meals.length ? meals.map((m,i)=>`
     <div class="meal-entry">
       <div class="meal-entry-head">
@@ -645,17 +923,14 @@ function renderDay() {
     if(lmc) lmc.textContent = `${meals.length} meal${meals.length!==1?'s':''} logged`;
   }
 
-  // Header
   updateHeader();
 }
 
 function updateHeader() {
   const today = todayKey();
   const d = keyToDate(today);
-  document.getElementById('header-date').textContent = d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
-  const meals = S.meals[today]||[];
-  const cal = meals.reduce((a,m)=>a+(+m.cal||0),0);
-  document.getElementById('header-sub').textContent = meals.length ? `${Math.round(cal)} kcal today` : 'Nothing logged yet';
+  const dateEl = document.getElementById('header-date');
+  if(dateEl) dateEl.textContent = d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
 }
 
 function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -819,42 +1094,34 @@ function drawComboChart(id, days, calFn, wtFn, goalCal, goalWt) {
   }
 
   const n = days.length;
-  // Left axis = calories, right axis = weight
   const pad = {t:14, r:40, b:28, l:42};
   const cw = W-pad.l-pad.r, ch = H-pad.t-pad.b;
 
-  // Cal axis range
   const allCal = goalCal ? [...calDef, goalCal] : calDef;
   const calMin = calDef.length ? Math.max(0, Math.min(...allCal)*0.85) : 0;
   const calMax = calDef.length ? Math.max(...allCal)*1.1 : (goalCal||2000)*1.1;
   const calRange = calMax-calMin || 1;
 
-  // Wt axis range
   const allWt = goalWt ? [...wtDef, goalWt] : wtDef;
   const wtMin  = wtDef.length ? Math.min(...allWt)*0.97 : (goalWt||150)*0.97;
   const wtMax  = wtDef.length ? Math.max(...allWt)*1.03 : (goalWt||150)*1.03;
   const wtRange = wtMax-wtMin || 1;
 
-  const barW   = Math.max(4, (cw/n)*0.55);
+  const barW    = Math.max(4, (cw/n)*0.55);
   const xCenter = i => pad.l + (i+0.5)*(cw/n);
   const yCalPos = v => pad.t + ch - ((v-calMin)/calRange)*ch;
   const yWtPos  = v => pad.t + ch - ((v-wtMin)/wtRange)*ch;
 
-  // Grid lines (3 horizontal)
   [0, 0.5, 1].forEach(f=>{
     const y = pad.t + ch*(1-f);
     ctx.strokeStyle='rgba(255,255,255,0.05)';
     ctx.lineWidth=0.5;
     ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+cw,y); ctx.stroke();
-
-    // Left axis labels (calories)
     ctx.fillStyle='rgba(34,200,122,0.6)';
     ctx.font="8px 'DM Mono',monospace";
     ctx.textAlign='right';
     const calLabel = Math.round(calMin+calRange*f);
     ctx.fillText(calLabel>=1000?(calLabel/1000).toFixed(1)+'k':calLabel, pad.l-4, y+3);
-
-    // Right axis labels (weight)
     if(wtDef.length||goalWt) {
       ctx.fillStyle='rgba(240,165,0,0.6)';
       ctx.textAlign='left';
@@ -862,7 +1129,6 @@ function drawComboChart(id, days, calFn, wtFn, goalCal, goalWt) {
     }
   });
 
-  // ── Calorie bars ──
   calVals.forEach((v,i)=>{
     if(v===null) return;
     const x = xCenter(i) - barW/2;
@@ -876,7 +1142,6 @@ function drawComboChart(id, days, calFn, wtFn, goalCal, goalWt) {
     ctx.globalAlpha=1;
   });
 
-  // ── Calorie goal line ──
   if(goalCal && calDef.length) {
     const gy = yCalPos(goalCal);
     ctx.strokeStyle='rgba(34,200,122,0.5)';
@@ -888,7 +1153,6 @@ function drawComboChart(id, days, calFn, wtFn, goalCal, goalWt) {
     ctx.fillText('cal goal', pad.l+3, gy-3);
   }
 
-  // ── Weight line ──
   if(wtDef.length) {
     ctx.strokeStyle='#f0a500'; ctx.lineWidth=2;
     ctx.lineJoin='round'; ctx.lineCap='round';
@@ -900,8 +1164,6 @@ function drawComboChart(id, days, calFn, wtFn, goalCal, goalWt) {
       if(!started){ ctx.moveTo(x,y); started=true; } else ctx.lineTo(x,y);
     });
     ctx.stroke();
-
-    // Dots
     wtVals.forEach((v,i)=>{
       if(v===null) return;
       ctx.beginPath(); ctx.arc(xCenter(i),yWtPos(v),3,0,Math.PI*2);
@@ -910,7 +1172,6 @@ function drawComboChart(id, days, calFn, wtFn, goalCal, goalWt) {
     });
   }
 
-  // ── Weight goal line ──
   if(goalWt && wtDef.length) {
     const gy = yWtPos(goalWt);
     ctx.strokeStyle='rgba(240,165,0,0.45)';
@@ -922,7 +1183,6 @@ function drawComboChart(id, days, calFn, wtFn, goalCal, goalWt) {
     ctx.fillText('wt goal', pad.l+cw-3, gy-3);
   }
 
-  // ── X date labels ──
   ctx.fillStyle='rgba(255,255,255,0.28)';
   ctx.font="8px 'DM Mono',monospace"; ctx.textAlign='center';
   days.forEach((k,i)=>{ if(i%3===0||i===n-1) ctx.fillText(fmtShort(k), xCenter(i), H-8); });
@@ -951,7 +1211,7 @@ function exportData() {
   const blob = new Blob([JSON.stringify({meals:S.meals,weights:S.weights,goals:S.goals},null,2)],{type:'application/json'});
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
-  a.href=url; a.download='health-tracker-export.json'; a.click();
+  a.href=url; a.download='macro-log-export.json'; a.click();
   URL.revokeObjectURL(url);
   toast('Data exported');
 }
@@ -968,11 +1228,50 @@ document.addEventListener('keydown', e=>{
   if(e.key==='Enter' && currentTab==='log') addMeal();
 });
 
+
+// ── Settings ───────────────────────────────────────────────────
+let SS = { showProgress:true, showStreak:true, weightUnit:'lbs', defaultMeal:'auto' };
+
+function loadSettingsState() {
+  try { const s=JSON.parse(localStorage.getItem('ht_settings')||'{}'); SS={...SS,...s}; } catch(e){}
+  document.getElementById('s-show-progress').checked = SS.showProgress;
+  document.getElementById('s-show-streak').checked   = SS.showStreak;
+  document.getElementById('s-default-meal').value    = SS.defaultMeal;
+  setWeightUnit(SS.weightUnit, false);
+}
+function saveSettingsState() {
+  SS.showProgress  = document.getElementById('s-show-progress').checked;
+  SS.showStreak    = document.getElementById('s-show-streak').checked;
+  SS.defaultMeal   = document.getElementById('s-default-meal').value;
+  localStorage.setItem('ht_settings', JSON.stringify(SS));
+}
+function setWeightUnit(unit, save=true) {
+  SS.weightUnit = unit;
+  document.getElementById('s-unit-lbs').classList.toggle('active', unit==='lbs');
+  document.getElementById('s-unit-kg').classList.toggle('active', unit==='kg');
+  if(save) { saveSettingsState(); renderWeight(); }
+}
+function openSettings() {
+  // Update data size display
+  let bytes = 0;
+  ['ht_meals','ht_weights','ht_goals','ht_settings'].forEach(k=>{
+    bytes += (localStorage.getItem(k)||'').length;
+  });
+  const kb = (bytes/1024).toFixed(1);
+  document.getElementById('s-data-size').textContent = kb+' KB';
+  document.getElementById('settings-overlay').classList.add('open');
+}
+function closeSettings() {
+  document.getElementById('settings-overlay').classList.remove('open');
+}
+function handleSettingsOverlayClick(e) {
+  if(e.target === document.getElementById('settings-overlay')) closeSettings();
+}
+
 // ── Boot ───────────────────────────────────────────────────────
 loadState();
 document.getElementById('w-date').value = todayKey();
 
-// Auto-select meal type based on current hour
 const hr = new Date().getHours();
 const mealMap = [[6,9,'Breakfast'],[9,11,'Morning Snack'],[11,14,'Lunch'],[14,17,'Afternoon Snack'],[17,21,'Dinner'],[21,24,'Evening Snack']];
 const sel = document.getElementById('meal-type');
@@ -980,9 +1279,19 @@ for(const [s,e,label] of mealMap) {
   if(hr>=s&&hr<e) { sel.value=label; break; }
 }
 
+loadSettingsState();
 renderDay();
 renderWeight();
 updateHeader();
+
+// ── Dismiss loader ─────────────────────────────────────────────
+setTimeout(()=>{
+  const loader = document.getElementById('loader');
+  if(loader) {
+    loader.classList.add('hidden');
+    setTimeout(()=>loader.remove(), 600);
+  }
+}, 1600);
 </script>
 </body>
 </html>
