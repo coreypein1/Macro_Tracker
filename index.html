@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Health">
+<meta name="apple-mobile-web-app-title" content="Macro Log">
 <meta name="theme-color" content="#0a0a0a">
-<title>Health Tracker</title>
+<title>Macro Log</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -501,6 +501,186 @@ canvas { display: block; }
 }
 .seg-btn.active { background: var(--bg4); color: var(--text); }
 
+
+/* ── Favourites ── */
+.fav-entry {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+.fav-entry-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+.fav-entry-name { font-size: 14px; font-weight: 500; color: var(--text); }
+.fav-entry-macros { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+.fav-ingredient-list { font-size: 11px; color: var(--text3); margin-top: 4px; line-height: 1.5; }
+.fav-actions { display: flex; gap: 8px; }
+.fav-log-btn {
+  flex: 1; height: 34px; border-radius: 8px;
+  background: var(--green); color: #000;
+  border: none; font-family: var(--font); font-size: 12px; font-weight: 500;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;
+  transition: background 0.15s;
+}
+.fav-log-btn:active { background: #1aaf6a; }
+.fav-del-btn {
+  width: 34px; height: 34px; border-radius: 8px;
+  background: var(--bg4); border: 1px solid var(--border2);
+  color: var(--text3); cursor: pointer; font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: color 0.15s;
+}
+.fav-del-btn:active { color: var(--red); }
+
+/* Ingredient row in form */
+.ingredient-row {
+  display: grid; grid-template-columns: 1fr 70px 80px 28px;
+  gap: 6px; align-items: center; margin-bottom: 6px;
+}
+.ingredient-row input, .ingredient-row select {
+  height: 36px; background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 8px; color: var(--text); font-family: var(--font);
+  font-size: 12px; padding: 0 8px; appearance: none; -webkit-appearance: none;
+}
+.ingredient-row input:focus, .ingredient-row select:focus {
+  outline: none; border-color: var(--green);
+}
+.ingredient-del {
+  width: 28px; height: 28px; background: none; border: none;
+  color: var(--text3); cursor: pointer; font-size: 16px; display: flex;
+  align-items: center; justify-content: center;
+}
+.add-ingredient-btn {
+  height: 34px; background: none; border: 1px dashed var(--border2);
+  border-radius: 8px; color: var(--text2); font-family: var(--font);
+  font-size: 12px; cursor: pointer; width: 100%; margin-top: 4px;
+  transition: border-color 0.15s, color 0.15s;
+}
+.add-ingredient-btn:active { border-color: var(--green); color: var(--green); }
+
+/* Fav picker overlay */
+.fav-picker-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  z-index: 500; opacity: 0; visibility: hidden;
+  transition: opacity 0.25s, visibility 0.25s;
+}
+.fav-picker-overlay.open { opacity: 1; visibility: visible; }
+.fav-picker-panel {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: var(--bg2); border-top: 1px solid var(--border2);
+  border-radius: 20px 20px 0 0;
+  padding: 0 0 calc(20px + var(--safe));
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+  max-height: 75vh; overflow-y: auto;
+}
+.fav-picker-overlay.open .fav-picker-panel { transform: translateY(0); }
+.fav-picker-handle { width: 36px; height: 4px; background: var(--border2); border-radius: 2px; margin: 12px auto 4px; }
+.fav-picker-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px 16px; border-bottom: 1px solid var(--border); }
+.fav-picker-title { font-size: 16px; font-weight: 600; }
+.fav-picker-close { background: var(--bg3); border: 1px solid var(--border2); color: var(--text2); border-radius: 8px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; }
+.fav-picker-body { padding: 12px 16px; }
+.fav-picker-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--r2); margin-bottom: 8px; cursor: pointer;
+  transition: border-color 0.15s;
+}
+.fav-picker-item:active { border-color: var(--green); }
+.fav-picker-item-name { font-size: 14px; font-weight: 500; color: var(--text); }
+.fav-picker-item-macros { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.fav-picker-item-cal { font-family: var(--mono); font-size: 14px; color: var(--green); font-weight: 500; }
+
+/* ── Daily notes ── */
+.daily-note {
+  width: 100%; min-height: 80px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--r); color: var(--text);
+  font-family: var(--font); font-size: 14px;
+  padding: 12px 14px; resize: none;
+  transition: border-color 0.15s;
+  line-height: 1.5;
+}
+.daily-note:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(34,200,122,0.1); }
+.daily-note::placeholder { color: var(--text3); }
+.note-saved { font-size: 10px; color: var(--text3); text-align: right; margin-top: 4px; transition: opacity 0.3s; }
+
+/* ── Donut chart ── */
+.donut-wrap { display: flex; align-items: center; gap: 20px; padding: 4px 0; }
+.donut-canvas-wrap { flex-shrink: 0; }
+.donut-legend { flex: 1; }
+.donut-legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.donut-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.donut-legend-label { font-size: 12px; color: var(--text2); flex: 1; }
+.donut-legend-val { font-family: var(--mono); font-size: 12px; color: var(--text); font-weight: 500; }
+
+
+
+/* ── Chart range toggle ── */
+.chart-range-toggle { display: flex; gap: 6px; margin-bottom: 10px; }
+.range-btn {
+  flex: 1; height: 28px; border-radius: 8px; font-family: var(--font);
+  font-size: 11px; font-weight: 500; cursor: pointer;
+  background: var(--bg3); border: 1px solid var(--border2); color: var(--text2);
+  transition: all 0.15s;
+}
+.range-btn.active { background: var(--bg4); color: var(--text); border-color: var(--green); }
+
+/* ── TDEE Calculator ── */
+.tdee-result {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--r2);
+  padding: 14px 16px;
+  margin-top: 14px;
+  display: none;
+}
+.tdee-result.visible { display: block; }
+.tdee-result-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
+.tdee-result-label { font-size: 12px; color: var(--text2); }
+.tdee-result-val { font-family: var(--mono); font-size: 22px; font-weight: 500; color: var(--green); }
+.tdee-result-sub { font-size: 10px; color: var(--text3); margin-bottom: 12px; line-height: 1.5; }
+.tdee-breakdown { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 14px; }
+.tdee-breakdown-item { background: var(--bg4); border-radius: 8px; padding: 8px; text-align: center; }
+.tdee-breakdown-val { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--text); }
+.tdee-breakdown-lbl { font-size: 9px; color: var(--text3); margin-top: 2px; }
+.tdee-seg { display: flex; background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px; overflow: hidden; margin-top: 4px; }
+.tdee-seg-btn { flex: 1; padding: 7px 2px; font-size: 11px; font-weight: 500; font-family: var(--font); color: var(--text2); background: none; border: none; cursor: pointer; transition: all 0.15s; text-align: center; }
+.tdee-seg-btn.active { background: var(--bg4); color: var(--text); }
+
+
+/* ── TDEE Calculator v2 ── */
+.tdee-goal-toggle { display: flex; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--r2); overflow: hidden; margin-bottom: 14px; }
+.tdee-goal-btn { flex: 1; padding: 9px 4px; font-size: 12px; font-weight: 500; font-family: var(--font); color: var(--text2); background: none; border: none; cursor: pointer; transition: all 0.15s; }
+.tdee-goal-btn.active-cut    { background: var(--red-dim);   color: var(--red);   }
+.tdee-goal-btn.active-maintain { background: var(--green-dim); color: var(--green); }
+.tdee-goal-btn.active-bulk   { background: var(--amber-dim); color: var(--amber); }
+.tdee-rate-wrap { margin-bottom: 14px; display: none; }
+.tdee-rate-wrap.visible { display: block; }
+.tdee-rate-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.tdee-rate-label { font-size: 11px; color: var(--text2); }
+.tdee-rate-val { font-family: var(--mono); font-size: 12px; color: var(--text); font-weight: 500; }
+.tdee-rate-slider { width: 100%; accent-color: var(--green); }
+.tdee-result { background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--r2); padding: 14px 16px; margin-top: 14px; display: none; }
+.tdee-result.visible { display: block; }
+.tdee-main-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 2px; }
+.tdee-main-label { font-size: 12px; color: var(--text2); }
+.tdee-main-val { font-family: var(--mono); font-size: 22px; font-weight: 500; color: var(--green); }
+.tdee-main-val.cut  { color: var(--red); }
+.tdee-main-val.bulk { color: var(--amber); }
+.tdee-bmr-line { font-size: 10px; color: var(--text3); margin-bottom: 12px; }
+.tdee-timeline { background: var(--bg4); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; font-size: 11px; color: var(--text2); line-height: 1.5; display: none; }
+.tdee-timeline.visible { display: block; }
+.tdee-timeline strong { color: var(--text); font-weight: 500; }
+.tdee-macro-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 14px; }
+.tdee-macro-card { background: var(--bg4); border-radius: 8px; padding: 8px; text-align: center; }
+.tdee-macro-val { font-family: var(--mono); font-size: 14px; font-weight: 500; color: var(--text); }
+.tdee-macro-lbl { font-size: 9px; color: var(--text3); margin-top: 2px; }
+.tdee-macro-kcal { font-size: 9px; color: var(--text3); margin-top: 1px; }
+.tdee-seg { display: flex; background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px; overflow: hidden; margin-top: 4px; }
+.tdee-seg-btn { flex: 1; padding: 7px 2px; font-size: 11px; font-weight: 500; font-family: var(--font); color: var(--text2); background: none; border: none; cursor: pointer; transition: all 0.15s; text-align: center; }
+.tdee-seg-btn.active { background: var(--bg4); color: var(--text); }
+
 </style>
 </head>
 <body>
@@ -568,7 +748,13 @@ canvas { display: block; }
       </div>
       <div id="streak-display"></div>
       <div id="totals-display"></div>
-      <div class="section-lbl">Add meal</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div class="section-lbl" style="margin:0;">Add meal</div>
+        <button class="btn-sm" onclick="openFavPicker()" style="color:var(--amber);border-color:rgba(240,165,0,0.3);">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          Favourites
+        </button>
+      </div>
       <div class="card">
         <div class="field"><label>Food item</label><input id="food-name" type="text" placeholder="e.g. Chicken breast, 200g" autocomplete="off" autocorrect="off"></div>
         <div class="field"><label>Meal</label>
@@ -594,6 +780,10 @@ canvas { display: block; }
         <div class="section-lbl" id="log-meal-count"></div>
         <div id="meal-list"></div>
       </div>
+      <div class="section-lbl">Daily note</div>
+      <textarea class="daily-note" id="daily-note" placeholder="How are you feeling today? Notes on energy, sleep, training..." oninput="saveNote()"></textarea>
+      <div class="note-saved" id="note-saved"></div>
+
     </div>
 
     <!-- WEIGHT -->
@@ -625,14 +815,29 @@ canvas { display: block; }
       <div id="hist-totals"></div>
       <div class="section-lbl">Meals</div>
       <div id="hist-meal-list"></div>
+
     </div>
 
     <!-- STATS -->
     <div class="screen" id="screen-stats">
+      <div class="section-lbl">Macro breakdown — 7-day average</div>
+      <div class="card" style="padding:14px 16px;">
+        <div class="donut-wrap">
+          <div class="donut-canvas-wrap"><canvas id="donut-chart" width="110" height="110"></canvas></div>
+          <div class="donut-legend" id="donut-legend"></div>
+        </div>
+      </div>
+
       <div class="section-lbl">7-day snapshot</div>
       <div class="stat-grid" id="stat-grid"></div>
-      <div class="section-lbl">Calories &amp; Weight — 14 days</div>
+
+      <div class="section-lbl">Calories &amp; Weight</div>
       <div class="card" style="padding:14px 16px 10px;">
+        <div class="chart-range-toggle">
+          <button class="range-btn active" id="range-14" onclick="setChartRange(14)">14d</button>
+          <button class="range-btn" id="range-30" onclick="setChartRange(30)">30d</button>
+          <button class="range-btn" id="range-90" onclick="setChartRange(90)">90d</button>
+        </div>
         <div style="display:flex;gap:14px;margin-bottom:10px;flex-wrap:wrap;">
           <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#22c87a;"></span>Calories (kcal)</span>
           <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);"><span style="display:inline-block;width:18px;height:2px;background:#f0a500;border-radius:1px;"></span>Weight (lbs)</span>
@@ -642,8 +847,102 @@ canvas { display: block; }
       </div>
     </div>
 
+    <!-- FAVOURITES -->
+    <div class="screen" id="screen-favs">
+      <div class="section-lbl">Your favourites</div>
+      <div id="favs-list"></div>
+      <div class="section-lbl" style="margin-top:20px;">Create new favourite</div>
+      <div class="card">
+        <div class="field"><label>Meal name</label><input id="fav-name" type="text" placeholder="e.g. Post-workout shake" autocomplete="off"></div>
+        <div class="grid2" style="margin-bottom:10px;">
+          <div class="field" style="margin:0;"><label>Calories</label><input id="fav-cal" type="number" inputmode="decimal" placeholder="0"></div>
+          <div class="field" style="margin:0;"><label>Protein (g)</label><input id="fav-pro" type="number" inputmode="decimal" placeholder="0"></div>
+        </div>
+        <div class="grid2" style="margin-bottom:14px;">
+          <div class="field" style="margin:0;"><label>Carbs (g)</label><input id="fav-carb" type="number" inputmode="decimal" placeholder="0"></div>
+          <div class="field" style="margin:0;"><label>Fiber (g)</label><input id="fav-fib" type="number" inputmode="decimal" placeholder="0"></div>
+        </div>
+        <div class="field">
+          <label>Ingredients</label>
+          <div id="ingredient-rows"></div>
+          <button class="add-ingredient-btn" onclick="addIngredientRow()">+ Add ingredient</button>
+        </div>
+        <div style="margin-top:14px;">
+          <button class="btn btn-primary" onclick="saveFavourite()">Save favourite</button>
+        </div>
+      </div>
+    </div>
+
     <!-- GOALS -->
     <div class="screen" id="screen-goals">
+      <div class="section-lbl">TDEE calculator</div>
+      <div class="card">
+        <!-- Sex + Age -->
+        <div class="grid2" style="margin-bottom:10px;">
+          <div class="field" style="margin:0;">
+            <label>Sex</label>
+            <div class="tdee-seg" id="tdee-sex-ctrl">
+              <button class="tdee-seg-btn active" id="tdee-sex-male" onclick="setTdeeSex('male')">Male</button>
+              <button class="tdee-seg-btn" id="tdee-sex-female" onclick="setTdeeSex('female')">Female</button>
+            </div>
+          </div>
+          <div class="field" style="margin:0;"><label>Age</label><input id="tdee-age" type="number" inputmode="numeric" placeholder="30" min="10" max="100" oninput="calcTdee()"></div>
+        </div>
+        <!-- Height -->
+        <div class="grid2" style="margin-bottom:10px;">
+          <div class="field" style="margin:0;"><label>Height (ft)</label><input id="tdee-ft" type="number" inputmode="numeric" placeholder="5" min="3" max="8" oninput="calcTdee()"></div>
+          <div class="field" style="margin:0;"><label>Height (in)</label><input id="tdee-in" type="number" inputmode="numeric" placeholder="10" min="0" max="11" oninput="calcTdee()"></div>
+        </div>
+        <!-- Weight -->
+        <div class="field" style="margin-bottom:10px;">
+          <label>Weight (lbs) <span id="tdee-weight-hint" style="color:var(--text3);font-size:10px;"></span></label>
+          <input id="tdee-weight" type="number" inputmode="decimal" step="0.1" placeholder="0.0" oninput="calcTdee()">
+        </div>
+        <!-- Activity -->
+        <div class="field" style="margin-bottom:14px;">
+          <label>Activity level</label>
+          <select id="tdee-activity" onchange="calcTdee()">
+            <option value="1.2">Sedentary (desk job, no exercise)</option>
+            <option value="1.375">Lightly active (1–3 days/week)</option>
+            <option value="1.55" selected>Moderately active (3–5 days/week)</option>
+            <option value="1.725">Very active (6–7 days/week)</option>
+            <option value="1.9">Extra active (physical job + daily training)</option>
+          </select>
+        </div>
+        <!-- Goal toggle -->
+        <div class="field" style="margin-bottom:0;">
+          <label>Goal</label>
+          <div class="tdee-goal-toggle">
+            <button class="tdee-goal-btn" id="tdee-btn-cut"      onclick="setTdeeGoal('cut')">Cut</button>
+            <button class="tdee-goal-btn active-maintain" id="tdee-btn-maintain" onclick="setTdeeGoal('maintain')">Maintain</button>
+            <button class="tdee-goal-btn" id="tdee-btn-bulk"     onclick="setTdeeGoal('bulk')">Bulk</button>
+          </div>
+        </div>
+        <!-- Rate slider -->
+        <div class="tdee-rate-wrap" id="tdee-rate-wrap">
+          <div class="tdee-rate-header">
+            <span class="tdee-rate-label" id="tdee-rate-label">Weekly rate</span>
+            <span class="tdee-rate-val" id="tdee-rate-display">0.5 lbs/week</span>
+          </div>
+          <input type="range" class="tdee-rate-slider" id="tdee-rate-slider" min="0.25" max="1.5" step="0.25" value="0.5" oninput="onRateSlider()">
+        </div>
+        <!-- Result -->
+        <div class="tdee-result" id="tdee-result">
+          <div class="tdee-main-row">
+            <span class="tdee-main-label" id="tdee-main-label">Target calories</span>
+            <span class="tdee-main-val" id="tdee-main-val">—</span>
+          </div>
+          <div class="tdee-bmr-line" id="tdee-bmr-line"></div>
+          <div class="tdee-timeline" id="tdee-timeline"></div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:8px;letter-spacing:0.4px;text-transform:uppercase;font-weight:500;">Suggested macros</div>
+          <div class="tdee-macro-grid" id="tdee-macro-grid"></div>
+          <button class="btn btn-primary" style="height:40px;font-size:13px;" onclick="applyTdeeToGoal()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Apply calories &amp; macros to goals
+          </button>
+        </div>
+      </div>
+
       <div class="section-lbl">Daily targets</div>
       <div class="card">
         <div class="goal-row">
@@ -693,14 +992,18 @@ canvas { display: block; }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/></svg>
       Goals
     </button>
+    <button class="nav-btn" id="nav-favs" onclick="switchTab('favs')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      Favs
+    </button>
   </nav>
 <!-- Settings panel -->
 <div class="settings-overlay" id="settings-overlay" onclick="handleSettingsOverlayClick(event)">
   <div class="settings-panel" id="settings-panel">
-    <div class="settings-handle"></div>
+    <div class="settings-handle" id="settings-handle"></div>
     <div class="settings-header">
       <span class="settings-title">Settings</span>
-      <button class="settings-close" onclick="closeSettings()">×</button>
+
     </div>
     <div class="settings-body">
 
@@ -748,7 +1051,7 @@ canvas { display: block; }
       <div class="card" style="padding:4px 14px;margin-bottom:0;">
         <div class="settings-row">
           <div class="settings-row-label">Version</div>
-          <span style="font-family:var(--mono);font-size:11px;color:var(--text2);">1.0.0</span>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--text2);">1.1.0</span>
         </div>
         <div class="settings-row">
           <div class="settings-row-label">Data stored</div>
@@ -757,6 +1060,18 @@ canvas { display: block; }
       </div>
 
     </div>
+  </div>
+</div>
+
+<!-- Favourites picker overlay -->
+<div class="fav-picker-overlay" id="fav-picker-overlay" onclick="handleFavPickerClick(event)">
+  <div class="fav-picker-panel" id="fav-picker-panel">
+    <div class="fav-picker-handle" id="fav-picker-handle"></div>
+    <div class="fav-picker-header">
+      <span class="fav-picker-title">Favourites</span>
+
+    </div>
+    <div class="fav-picker-body" id="fav-picker-body"></div>
   </div>
 </div>
 
@@ -827,12 +1142,14 @@ function switchTab(tab) {
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('screen-'+tab).classList.add('active');
-  document.getElementById('nav-'+tab).classList.add('active');
+  const navBtn = document.getElementById('nav-'+tab);
+  if(navBtn) navBtn.classList.add('active');
   document.getElementById('scroll-area').scrollTop = 0;
   if(tab==='log'||tab==='history') renderDay();
   if(tab==='weight') renderWeight();
   if(tab==='stats') renderStats();
-  if(tab==='goals') loadGoalsForm();
+  if(tab==='goals') { loadGoalsForm(); loadTdeeInputs(); }
+  if(tab==='favs') { renderFavsScreen(); }
 }
 
 // ── Day navigation ─────────────────────────────────────────────
@@ -923,6 +1240,7 @@ function renderDay() {
     if(lmc) lmc.textContent = `${meals.length} meal${meals.length!==1?'s':''} logged`;
   }
 
+  renderNote(k);
   updateHeader();
 }
 
@@ -1055,13 +1373,16 @@ function renderStats() {
   const wGoalStr  = wToGoal !== null ? (wToGoal>0?'+':'')+wToGoal+' lbs' : '—';
   const wGoalCls  = wToGoal !== null ? (wToGoal>0?'positive':'negative') : '';
 
+  drawDonut('donut-chart','donut-legend', days7);
+
   document.getElementById('stat-grid').innerHTML=`
     <div class="stat-card"><div class="stat-val">${avgCalStr}</div><div class="stat-lbl">Avg kcal / day</div></div>
     <div class="stat-card"><div class="stat-val">${avgProStr}</div><div class="stat-lbl">Avg protein / day</div></div>
     <div class="stat-card"><div class="stat-val">${avgWStr}</div><div class="stat-lbl">Avg weight (7d)</div></div>
     <div class="stat-card"><div class="stat-val ${wGoalCls}">${wGoalStr}</div><div class="stat-lbl">${wToGoal!==null?(wToGoal<=0?'Below target ✓':'Above target'):'To goal weight'}</div></div>`;
 
-  drawComboChart('combo-chart', days14,
+  const days = getNDays(chartDays);
+  drawComboChart('combo-chart', days,
     k=>{ const m=S.meals[k]; return m&&m.length?Math.round(m.reduce((a,e)=>a+(+e.cal||0),0)):null; },
     k=>S.weights[k]??null,
     S.goals.cal||null, S.goals.weight||null);
@@ -1254,11 +1575,12 @@ function setWeightUnit(unit, save=true) {
 function openSettings() {
   // Update data size display
   let bytes = 0;
-  ['ht_meals','ht_weights','ht_goals','ht_settings'].forEach(k=>{
+  ['ht_meals','ht_weights','ht_goals','ht_settings','ht_notes','ht_tdee','ht_favs'].forEach(k=>{
     bytes += (localStorage.getItem(k)||'').length;
   });
   const kb = (bytes/1024).toFixed(1);
   document.getElementById('s-data-size').textContent = kb+' KB';
+  const sp=document.getElementById('settings-panel'); if(sp) sp.style.transform='';
   document.getElementById('settings-overlay').classList.add('open');
 }
 function closeSettings() {
@@ -1266,6 +1588,524 @@ function closeSettings() {
 }
 function handleSettingsOverlayClick(e) {
   if(e.target === document.getElementById('settings-overlay')) closeSettings();
+}
+
+
+// ── Favourites ─────────────────────────────────────────────────
+let FAV_PICKER_MEAL = 'Lunch';
+
+function loadFavs() {
+  try { return JSON.parse(localStorage.getItem('ht_favs')||'[]'); } catch(e){ return []; }
+}
+function saveFavs(favs) { localStorage.setItem('ht_favs', JSON.stringify(favs)); }
+
+function openFavPicker() {
+  FAV_PICKER_MEAL = document.getElementById('meal-type').value;
+  renderFavPicker();
+  const fp=document.getElementById('fav-picker-panel'); if(fp) fp.style.transform='';
+  document.getElementById('fav-picker-overlay').classList.add('open');
+}
+function closeFavPicker() { document.getElementById('fav-picker-overlay').classList.remove('open'); }
+function handleFavPickerClick(e) { if(e.target===document.getElementById('fav-picker-overlay')) closeFavPicker(); }
+
+function renderFavPicker() {
+  const favs = loadFavs();
+  const body = document.getElementById('fav-picker-body');
+  if(!favs.length) {
+    body.innerHTML = `<div class="empty-state"><div class="empty-icon">⭐</div>No favourites yet.<br>Go to the Favourites tab to add some.</div>`;
+    return;
+  }
+  body.innerHTML = favs.map((f,i) => `
+    <div class="fav-picker-item" onclick="logFavourite(${i})">
+      <div>
+        <div class="fav-picker-item-name">${escHtml(f.name)}</div>
+        <div class="fav-picker-item-macros">${f.cal} kcal · ${f.pro}g protein · ${f.carb}g carbs</div>
+      </div>
+      <div class="fav-picker-item-cal">${f.cal}</div>
+    </div>`).join('');
+}
+
+function logFavourite(idx) {
+  const favs = loadFavs();
+  const f = favs[idx];
+  if(!f) return;
+  const k = S.currentDay;
+  if(!S.meals[k]) S.meals[k]=[];
+  S.meals[k].push({
+    name: f.name,
+    meal: FAV_PICKER_MEAL,
+    cal: f.cal, pro: f.pro, carb: f.carb, fib: f.fib
+  });
+  saveState(); renderDay(); closeFavPicker();
+  toast(`${f.name} added`);
+}
+
+// ── Favourites screen ──────────────────────────────────────────
+function renderFavsScreen() {
+  const favs = loadFavs();
+  const list = document.getElementById('favs-list');
+  if(!list) return;
+  if(!favs.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">⭐</div>No favourites yet.<br>Create your first meal template below.</div>`;
+    return;
+  }
+  list.innerHTML = favs.map((f,i) => `
+    <div class="fav-entry">
+      <div class="fav-entry-head">
+        <div class="fav-entry-name">${escHtml(f.name)}</div>
+      </div>
+      <div class="fav-entry-macros">
+        <span class="macro-pill"><span>${f.cal}</span> kcal</span>
+        <span class="macro-pill"><span>${f.pro}g</span> prot</span>
+        <span class="macro-pill"><span>${f.carb}g</span> carb</span>
+        <span class="macro-pill"><span>${f.fib}g</span> fiber</span>
+      </div>
+      ${f.ingredients && f.ingredients.length ? `<div class="fav-ingredient-list">${f.ingredients.map(ing=>`${escHtml(ing.name)} ${ing.amount} ${ing.unit}`).join(' · ')}</div>` : ''}
+      <div class="fav-actions" style="margin-top:8px;">
+        <button class="fav-del-btn" onclick="deleteFav(${i})">×</button>
+      </div>
+    </div>`).join('');
+}
+
+function deleteFav(i) {
+  const favs = loadFavs();
+  favs.splice(i,1);
+  saveFavs(favs);
+  renderFavsScreen();
+  toast('Favourite removed');
+}
+
+// Ingredient management for fav form
+let ingredientCount = 0;
+const UNITS = ['g','ml','oz','cup','tbsp','tsp','piece','slice','scoop','serving'];
+
+function addIngredientRow(name='', amount='', unit='g') {
+  const id = ++ingredientCount;
+  const row = document.createElement('div');
+  row.className = 'ingredient-row';
+  row.id = `ing-row-${id}`;
+  row.innerHTML = `
+    <input type="text" placeholder="Ingredient" value="${escHtml(name)}" id="ing-name-${id}">
+    <input type="number" placeholder="Amt" value="${amount}" id="ing-amt-${id}" inputmode="decimal" min="0">
+    <select id="ing-unit-${id}">${UNITS.map(u=>`<option${u===unit?' selected':''}>${u}</option>`).join('')}</select>
+    <button class="ingredient-del" onclick="removeIngredientRow(${id})">×</button>`;
+  document.getElementById('ingredient-rows').appendChild(row);
+}
+
+function removeIngredientRow(id) {
+  const row = document.getElementById(`ing-row-${id}`);
+  if(row) row.remove();
+}
+
+function getIngredients() {
+  const rows = document.querySelectorAll('#ingredient-rows .ingredient-row');
+  const result = [];
+  rows.forEach(row => {
+    const id = row.id.replace('ing-row-','');
+    const name = document.getElementById(`ing-name-${id}`)?.value.trim();
+    const amount = document.getElementById(`ing-amt-${id}`)?.value;
+    const unit = document.getElementById(`ing-unit-${id}`)?.value;
+    if(name) result.push({ name, amount: amount||'', unit });
+  });
+  return result;
+}
+
+function saveFavourite() {
+  const name = document.getElementById('fav-name').value.trim();
+  if(!name) { toast('Enter a meal name'); return; }
+  const cal  = +document.getElementById('fav-cal').value  || 0;
+  const pro  = +document.getElementById('fav-pro').value  || 0;
+  const carb = +document.getElementById('fav-carb').value || 0;
+  const fib  = +document.getElementById('fav-fib').value  || 0;
+  const ingredients = getIngredients();
+  const favs = loadFavs();
+  favs.push({ name, cal, pro, carb, fib, ingredients });
+  saveFavs(favs);
+  // Reset form
+  document.getElementById('fav-name').value = '';
+  ['fav-cal','fav-pro','fav-carb','fav-fib'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ingredient-rows').innerHTML = '';
+  ingredientCount = 0;
+  addIngredientRow();
+  renderFavsScreen();
+  toast('Favourite saved ✓');
+}
+
+// ── Daily notes ────────────────────────────────────────────────
+function loadNote(k) {
+  try { const notes = JSON.parse(localStorage.getItem('ht_notes')||'{}'); return notes[k]||''; } catch(e){ return ''; }
+}
+function saveNote() {
+  const k = S.currentDay;
+  const val = document.getElementById('daily-note')?.value || '';
+  try {
+    const notes = JSON.parse(localStorage.getItem('ht_notes')||'{}');
+    if(val) notes[k] = val; else delete notes[k];
+    localStorage.setItem('ht_notes', JSON.stringify(notes));
+    const el = document.getElementById('note-saved');
+    if(el) { el.textContent = 'Saved'; setTimeout(()=>{ el.textContent=''; }, 1500); }
+  } catch(e){}
+}
+function renderNote(k) {
+  const el = document.getElementById('daily-note');
+  if(el) el.value = loadNote(k);
+}
+
+// ── Donut chart ────────────────────────────────────────────────
+function drawDonut(canvasId, legendId, days7) {
+  let totPro=0, totCarb=0, totFat=0, totCal=0, loggedDays=0;
+  days7.forEach(k=>{
+    const m = S.meals[k];
+    if(!m||!m.length) return;
+    loggedDays++;
+    m.forEach(e=>{
+      totCal  += +e.cal  || 0;
+      totPro  += +e.pro  || 0;
+      totCarb += +e.carb || 0;
+    });
+  });
+  const d = loggedDays || 1;
+  // Estimate fat from remaining calories
+  const calsFromPro  = totPro  * 4;
+  const calsFromCarb = totCarb * 4;
+  const calsFromFat  = Math.max(0, totCal - calsFromPro - calsFromCarb);
+  totFat = calsFromFat / 9;
+
+  const totalMacroCalories = calsFromPro + calsFromCarb + calsFromFat || 1;
+  const pctPro  = calsFromPro  / totalMacroCalories;
+  const pctCarb = calsFromCarb / totalMacroCalories;
+  const pctFat  = calsFromFat  / totalMacroCalories;
+
+  const canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  const dpr = window.devicePixelRatio||2;
+  canvas.width = 110*dpr; canvas.height = 110*dpr;
+  canvas.style.width = '110px'; canvas.style.height = '110px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+
+  const cx=55, cy=55, r=42, inner=26;
+  const slices = [
+    { pct: pctPro,  color: '#22c87a', label: 'Protein', val: Math.round(totPro/d)+'g'  },
+    { pct: pctCarb, color: '#f0a500', label: 'Carbs',   val: Math.round(totCarb/d)+'g' },
+    { pct: pctFat,  color: '#7c6fcd', label: 'Fat',     val: Math.round(totFat/d)+'g'  },
+  ];
+
+  if(totCal === 0) {
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+    ctx.strokeStyle='rgba(255,255,255,0.08)'; ctx.lineWidth=r-inner; ctx.stroke();
+  } else {
+    let startAngle = -Math.PI/2;
+    slices.forEach(s=>{
+      const sweep = s.pct * Math.PI * 2;
+      ctx.beginPath();
+      ctx.arc(cx,cy,r,startAngle,startAngle+sweep);
+      ctx.arc(cx,cy,inner,startAngle+sweep,startAngle,true);
+      ctx.closePath();
+      ctx.fillStyle = s.color;
+      ctx.globalAlpha = 0.9;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      startAngle += sweep;
+    });
+  }
+
+  // Center text
+  ctx.fillStyle='rgba(255,255,255,0.7)';
+  ctx.font="bold 13px 'DM Mono',monospace";
+  ctx.textAlign='center';
+  ctx.fillText(Math.round(totCal/7).toLocaleString(), cx, cy+2);
+  ctx.font="9px 'DM Sans',sans-serif";
+  ctx.fillStyle='rgba(255,255,255,0.35)';
+  ctx.fillText('avg/day', cx, cy+13);
+
+  // Legend
+  const legend = document.getElementById(legendId);
+  if(legend) {
+    legend.innerHTML = slices.map(s=>`
+      <div class="donut-legend-item">
+        <div class="donut-legend-dot" style="background:${s.color}"></div>
+        <div class="donut-legend-label">${s.label}</div>
+        <div class="donut-legend-val">${Math.round(s.pct*100)}% <span style="color:var(--text2);font-size:10px;">${s.val}</span></div>
+      </div>`).join('');
+  }
+}
+
+// ── Chart range toggle ─────────────────────────────────────────
+let chartDays = 14;
+function setChartRange(n) {
+  chartDays = n;
+  [14,30,90].forEach(d=>{
+    const btn = document.getElementById(`range-${d}`);
+    if(btn) btn.classList.toggle('active', d===n);
+  });
+  const days = getNDays(n);
+  drawComboChart('combo-chart', days,
+    k=>{ const m=S.meals[k]; return m&&m.length?Math.round(m.reduce((a,e)=>a+(+e.cal||0),0)):null; },
+    k=>S.weights[k]??null,
+    S.goals.cal||null, S.goals.weight||null);
+}
+
+function getNDays(n) {
+  const days=[], today=new Date();
+  for(let i=n-1;i>=0;i--) {
+    const d=new Date(today); d.setDate(d.getDate()-i);
+    days.push(d.toISOString().slice(0,10));
+  }
+  return days;
+}
+
+// ── Override renderStats to include new features ───────────────
+const _origRenderStats = renderStats;
+// We'll redefine renderStats below after the original
+
+
+// ── Drag-to-close for slide-up panels ─────────────────────────
+function makeDraggablePanel(handleId, panelId, closeFn) {
+  const handle = document.getElementById(handleId);
+  const panel  = document.getElementById(panelId);
+  if(!handle || !panel) return;
+
+  let startY = 0, currentY = 0, dragging = false;
+
+  function onStart(e) {
+    dragging = true;
+    startY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+    currentY = 0;
+    panel.style.transition = 'none';
+  }
+
+  function onMove(e) {
+    if(!dragging) return;
+    const y = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+    currentY = Math.max(0, y - startY); // only allow downward drag
+    panel.style.transform = `translateY(${currentY}px)`;
+    if(e.cancelable) e.preventDefault();
+  }
+
+  function onEnd() {
+    if(!dragging) return;
+    dragging = false;
+    panel.style.transition = 'transform 0.3s cubic-bezier(0.32,0.72,0,1)';
+    const threshold = panel.offsetHeight * 0.30;
+    if(currentY > threshold) {
+      panel.style.transform = 'translateY(100%)';
+      setTimeout(closeFn, 300);
+    } else {
+      panel.style.transform = 'translateY(0)';
+    }
+    currentY = 0;
+  }
+
+  handle.addEventListener('touchstart', onStart, { passive: true });
+  handle.addEventListener('touchmove',  onMove,  { passive: false });
+  handle.addEventListener('touchend',   onEnd);
+  handle.addEventListener('mousedown',  onStart);
+  window.addEventListener('mousemove',  onMove);
+  window.addEventListener('mouseup',    onEnd);
+}
+
+
+
+
+// ── TDEE Calculator v2 ─────────────────────────────────────────
+let tdeeSex  = 'male';
+let tdeeGoal = 'maintain';
+let tdeeRate = 0.5;
+let _tdeeCalc = { tdee: 0, target: 0, pro: 0, carb: 0, fat: 0, fiber: 30 };
+
+function setTdeeSex(sex) {
+  tdeeSex = sex;
+  document.getElementById('tdee-sex-male').classList.toggle('active', sex==='male');
+  document.getElementById('tdee-sex-female').classList.toggle('active', sex==='female');
+  saveTdeeInputs(); calcTdee();
+}
+
+function setTdeeGoal(goal) {
+  tdeeGoal = goal;
+  ['cut','maintain','bulk'].forEach(g => {
+    const btn = document.getElementById('tdee-btn-'+g);
+    btn.className = 'tdee-goal-btn' + (g===goal ? ' active-'+g : '');
+  });
+  // Show/hide rate slider
+  const rateWrap = document.getElementById('tdee-rate-wrap');
+  const slider   = document.getElementById('tdee-rate-slider');
+  if(goal === 'cut') {
+    rateWrap.classList.add('visible');
+    slider.min = 0.25; slider.max = 1.5; slider.step = 0.25;
+    document.getElementById('tdee-rate-label').textContent = 'Weekly weight loss';
+    if(tdeeRate > 1.5) tdeeRate = 1.0;
+  } else if(goal === 'bulk') {
+    rateWrap.classList.add('visible');
+    slider.min = 0.25; slider.max = 0.75; slider.step = 0.25;
+    document.getElementById('tdee-rate-label').textContent = 'Weekly weight gain';
+    if(tdeeRate > 0.75) tdeeRate = 0.25;
+  } else {
+    rateWrap.classList.remove('visible');
+  }
+  slider.value = tdeeRate;
+  document.getElementById('tdee-rate-display').textContent = tdeeRate + ' lbs/week';
+  saveTdeeInputs(); calcTdee();
+}
+
+function onRateSlider() {
+  tdeeRate = parseFloat(document.getElementById('tdee-rate-slider').value);
+  document.getElementById('tdee-rate-display').textContent = tdeeRate.toFixed(2).replace(/\.?0+$/, '') + ' lbs/week';
+  saveTdeeInputs(); calcTdee();
+}
+
+function calcTdee() {
+  const age    = parseFloat(document.getElementById('tdee-age').value);
+  const ft     = parseFloat(document.getElementById('tdee-ft').value) || 0;
+  const inches = parseFloat(document.getElementById('tdee-in').value) || 0;
+  const wLbs   = parseFloat(document.getElementById('tdee-weight').value);
+  const act    = parseFloat(document.getElementById('tdee-activity').value);
+  saveTdeeInputs();
+
+  if(!age || !wLbs || (!ft && !inches)) {
+    document.getElementById('tdee-result').classList.remove('visible');
+    return;
+  }
+
+  const wKg = wLbs * 0.453592;
+  const hCm = ((ft * 12) + inches) * 2.54;
+
+  // Mifflin-St Jeor BMR
+  const bmr = tdeeSex === 'male'
+    ? (10 * wKg) + (6.25 * hCm) - (5 * age) + 5
+    : (10 * wKg) + (6.25 * hCm) - (5 * age) - 161;
+
+  const tdee = Math.round(bmr * act);
+
+  // Target calories based on goal + rate
+  let target = tdee;
+  let dailyDelta = 0;
+  if(tdeeGoal === 'cut')  { dailyDelta = Math.round((tdeeRate * 3500) / 7); target = tdee - dailyDelta; }
+  if(tdeeGoal === 'bulk') { dailyDelta = Math.round((tdeeRate * 3500) / 7); target = tdee + dailyDelta; }
+  target = Math.max(1200, target);
+
+  // Suggested macros
+  let proG, carbG, fatG, fiberG = 30;
+  if(tdeeGoal === 'cut') {
+    // High protein to preserve muscle: 1.1g per lb bodyweight
+    proG  = Math.round(wLbs * 1.1);
+    fatG  = Math.round((target * 0.25) / 9);
+    carbG = Math.round((target - (proG * 4) - (fatG * 9)) / 4);
+  } else if(tdeeGoal === 'bulk') {
+    // Moderate-high protein: 0.9g per lb, higher carbs for energy
+    proG  = Math.round(wLbs * 0.9);
+    fatG  = Math.round((target * 0.25) / 9);
+    carbG = Math.round((target - (proG * 4) - (fatG * 9)) / 4);
+  } else {
+    // Balanced: 30% protein, 40% carbs, 30% fat
+    proG  = Math.round((target * 0.30) / 4);
+    carbG = Math.round((target * 0.40) / 4);
+    fatG  = Math.round((target * 0.30) / 9);
+  }
+  carbG = Math.max(50, carbG);
+  fatG  = Math.max(30, fatG);
+  fiberG = Math.round(target / 1000 * 14); // 14g per 1000 kcal (DRI guideline)
+
+  _tdeeCalc = { tdee, target, pro: proG, carb: carbG, fat: fatG, fiber: fiberG };
+
+  // UI updates
+  const mainVal = document.getElementById('tdee-main-val');
+  mainVal.textContent = target.toLocaleString() + ' kcal';
+  mainVal.className = 'tdee-main-val' + (tdeeGoal!=='maintain' ? ' '+tdeeGoal : '');
+
+  const labelMap = { cut: 'Daily target (cut)', maintain: 'Daily target (maintain)', bulk: 'Daily target (bulk)' };
+  document.getElementById('tdee-main-label').textContent = labelMap[tdeeGoal];
+  document.getElementById('tdee-bmr-line').textContent =
+    `TDEE: ${tdee.toLocaleString()} kcal · BMR: ${Math.round(bmr).toLocaleString()} kcal · Mifflin-St Jeor`;
+
+  // Timeline
+  const timeline = document.getElementById('tdee-timeline');
+  const goalWt   = S.goals.weight;
+  if(goalWt && tdeeGoal !== 'maintain' && tdeeRate > 0) {
+    const diff  = Math.abs(wLbs - goalWt);
+    const weeks = Math.round(diff / tdeeRate);
+    const eta   = new Date();
+    eta.setDate(eta.getDate() + weeks * 7);
+    const etaStr = eta.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+    const dirStr = tdeeGoal === 'cut' ? 'lose' : 'gain';
+    timeline.innerHTML = `At <strong>${tdeeRate} lbs/week</strong>, you'll ${dirStr} <strong>${diff.toFixed(1)} lbs</strong> to reach your <strong>${goalWt} lbs</strong> goal in approx. <strong>${weeks} weeks</strong> (~${etaStr}).`;
+    timeline.classList.add('visible');
+  } else {
+    timeline.classList.remove('visible');
+  }
+
+  // Macro grid
+  const macroColor = tdeeGoal==='cut' ? 'var(--red)' : tdeeGoal==='bulk' ? 'var(--amber)' : 'var(--green)';
+  document.getElementById('tdee-macro-grid').innerHTML = `
+    <div class="tdee-macro-card">
+      <div class="tdee-macro-val" style="color:var(--green);">${proG}g</div>
+      <div class="tdee-macro-lbl">Protein</div>
+      <div class="tdee-macro-kcal">${proG*4} kcal</div>
+    </div>
+    <div class="tdee-macro-card">
+      <div class="tdee-macro-val" style="color:var(--amber);">${carbG}g</div>
+      <div class="tdee-macro-lbl">Carbs</div>
+      <div class="tdee-macro-kcal">${carbG*4} kcal</div>
+    </div>
+    <div class="tdee-macro-card">
+      <div class="tdee-macro-val" style="color:#7c6fcd;">${fatG}g</div>
+      <div class="tdee-macro-lbl">Fat</div>
+      <div class="tdee-macro-kcal">${fatG*9} kcal</div>
+    </div>`;
+
+  document.getElementById('tdee-result').classList.add('visible');
+}
+
+function applyTdeeToGoal() {
+  const { target, pro, carb, fiber } = _tdeeCalc;
+  if(!target) return;
+  document.getElementById('g-cal').value   = target;
+  document.getElementById('g-pro').value   = pro;
+  document.getElementById('g-carb').value  = carb;
+  document.getElementById('g-fiber').value = fiber;
+  S.goals.cal   = target;
+  S.goals.pro   = pro;
+  S.goals.carb  = carb;
+  S.goals.fiber = fiber;
+  saveState();
+  toast('Goals updated ✓');
+}
+
+function saveTdeeInputs() {
+  localStorage.setItem('ht_tdee', JSON.stringify({
+    sex:      tdeeSex,
+    goal:     tdeeGoal,
+    rate:     tdeeRate,
+    age:      document.getElementById('tdee-age')?.value      || '',
+    ft:       document.getElementById('tdee-ft')?.value       || '',
+    inches:   document.getElementById('tdee-in')?.value       || '',
+    weight:   document.getElementById('tdee-weight')?.value   || '',
+    activity: document.getElementById('tdee-activity')?.value || '1.55',
+  }));
+}
+
+function loadTdeeInputs() {
+  try {
+    const d = JSON.parse(localStorage.getItem('ht_tdee') || '{}');
+    if(d.sex)      setTdeeSex(d.sex);
+    if(d.goal)     setTdeeGoal(d.goal);
+    if(d.rate)     { tdeeRate = parseFloat(d.rate); document.getElementById('tdee-rate-slider').value = tdeeRate; document.getElementById('tdee-rate-display').textContent = tdeeRate + ' lbs/week'; }
+    if(d.age)      document.getElementById('tdee-age').value      = d.age;
+    if(d.ft)       document.getElementById('tdee-ft').value       = d.ft;
+    if(d.inches)   document.getElementById('tdee-in').value       = d.inches;
+    if(d.weight)   document.getElementById('tdee-weight').value   = d.weight;
+    if(d.activity) document.getElementById('tdee-activity').value = d.activity;
+  } catch(e){}
+  // Auto-fill weight from latest logged weight if empty
+  const wInput = document.getElementById('tdee-weight');
+  const hint   = document.getElementById('tdee-weight-hint');
+  const wKeys  = Object.keys(S.weights).sort();
+  if(wKeys.length) {
+    const latest = S.weights[wKeys[wKeys.length-1]];
+    if(hint) hint.textContent = `— latest: ${latest.toFixed(1)} lbs`;
+    if(wInput && !wInput.value) wInput.value = latest.toFixed(1);
+  }
+  calcTdee();
 }
 
 // ── Boot ───────────────────────────────────────────────────────
@@ -1280,6 +2120,10 @@ for(const [s,e,label] of mealMap) {
 }
 
 loadSettingsState();
+addIngredientRow();
+makeDraggablePanel("settings-handle","settings-panel",closeSettings);
+makeDraggablePanel("fav-picker-handle","fav-picker-panel",closeFavPicker); // init first ingredient row
+renderFavsScreen();
 renderDay();
 renderWeight();
 updateHeader();
