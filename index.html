@@ -435,11 +435,18 @@ canvas { display: block; }
   overflow-y: auto;
 }
 .settings-overlay.open .settings-panel { transform: translateY(0); }
-.settings-handle {
-  width: 36px; height: 4px;
+.settings-handle, .fav-picker-handle, .edit-panel-handle {
+  width: 100%; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: grab; flex-shrink: 0;
+  margin: 0;
+}
+.settings-handle::after, .fav-picker-handle::after, .edit-panel-handle::after {
+  content: '';
+  display: block;
+  width: 40px; height: 4px;
   background: var(--border2);
   border-radius: 2px;
-  margin: 12px auto 4px;
 }
 .settings-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -575,7 +582,7 @@ canvas { display: block; }
   max-height: 75vh; overflow-y: auto;
 }
 .fav-picker-overlay.open .fav-picker-panel { transform: translateY(0); }
-.fav-picker-handle { width: 36px; height: 4px; background: var(--border2); border-radius: 2px; margin: 12px auto 4px; }
+
 .fav-picker-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px 16px; border-bottom: 1px solid var(--border); }
 .fav-picker-title { font-size: 16px; font-weight: 600; }
 .fav-picker-close { background: var(--bg3); border: 1px solid var(--border2); color: var(--text2); border-radius: 8px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; }
@@ -680,6 +687,57 @@ canvas { display: block; }
 .tdee-seg { display: flex; background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px; overflow: hidden; margin-top: 4px; }
 .tdee-seg-btn { flex: 1; padding: 7px 2px; font-size: 11px; font-weight: 500; font-family: var(--font); color: var(--text2); background: none; border: none; cursor: pointer; transition: all 0.15s; text-align: center; }
 .tdee-seg-btn.active { background: var(--bg4); color: var(--text); }
+
+
+/* ── Chart tooltip ── */
+.chart-tooltip {
+  position: absolute;
+  background: var(--bg4);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 7px 10px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s;
+  font-size: 11px;
+  white-space: nowrap;
+  z-index: 10;
+  transform: translateX(-50%);
+}
+.chart-tooltip.visible { opacity: 1; }
+.chart-tooltip-date { color: var(--text2); margin-bottom: 3px; font-size: 10px; }
+.chart-tooltip-row { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+.chart-tooltip-row:last-child { margin-bottom: 0; }
+.chart-tooltip-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.chart-tooltip-val { font-family: var(--mono); font-size: 11px; color: var(--text); font-weight: 500; }
+.chart-crosshair {
+  position: absolute; top: 0; bottom: 0;
+  width: 1px; background: rgba(255,255,255,0.15);
+  pointer-events: none; opacity: 0; transition: opacity 0.1s;
+}
+.chart-crosshair.visible { opacity: 1; }
+.chart-wrap { position: relative; }
+
+
+/* ── Edit modals ── */
+.edit-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  z-index: 600; opacity: 0; visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.edit-overlay.open { opacity: 1; visibility: visible; }
+.edit-panel {
+  background: var(--bg2); border-top: 1px solid var(--border2);
+  border-radius: 20px 20px 0 0; padding: 0 20px calc(20px + var(--safe));
+  width: 100%; max-width: 430px;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+  max-height: 85vh; overflow-y: auto;
+}
+.edit-overlay.open .edit-panel { transform: translateY(0); }
+.edit-panel-handle { width: 36px; height: 4px; background: var(--border2); border-radius: 2px; margin: 14px auto 8px; }
+.edit-panel-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 16px; }
 
 </style>
 </head>
@@ -843,7 +901,15 @@ canvas { display: block; }
           <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);"><span style="display:inline-block;width:18px;height:2px;background:#f0a500;border-radius:1px;"></span>Weight (lbs)</span>
           <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);"><span style="display:inline-block;width:18px;height:1px;border-top:1px dashed rgba(255,255,255,0.35);"></span>Goal</span>
         </div>
-        <div class="chart-wrap" style="height:180px;"><canvas id="combo-chart"></canvas></div>
+        <div class="chart-wrap" style="height:180px;" id="combo-chart-wrap">
+          <canvas id="combo-chart" style="display:block;"></canvas>
+          <div class="chart-crosshair" id="chart-crosshair"></div>
+          <div class="chart-tooltip" id="chart-tooltip">
+            <div class="chart-tooltip-date" id="tt-date"></div>
+            <div class="chart-tooltip-row"><div class="chart-tooltip-dot" style="background:#22c87a;border-radius:2px;"></div><span class="chart-tooltip-val" id="tt-cal">—</span></div>
+            <div class="chart-tooltip-row"><div class="chart-tooltip-dot" style="background:#f0a500;"></div><span class="chart-tooltip-val" id="tt-wt">—</span></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1075,6 +1141,52 @@ canvas { display: block; }
   </div>
 </div>
 
+<!-- Edit meal modal -->
+<div class="edit-overlay" id="edit-meal-overlay" onclick="handleEditOverlayClick(event,'edit-meal-overlay')">
+  <div class="edit-panel" id="edit-meal-panel">
+    <div class="edit-panel-handle" id="edit-meal-handle"></div>
+    <div class="edit-panel-title">Edit meal</div>
+    <input type="hidden" id="edit-meal-day">
+    <input type="hidden" id="edit-meal-idx">
+    <div class="field"><label>Food item</label><input id="edit-meal-name" type="text" autocomplete="off"></div>
+    <div class="field"><label>Meal</label>
+      <select id="edit-meal-type">
+        <option>Breakfast</option><option>Morning Snack</option><option>Lunch</option>
+        <option>Afternoon Snack</option><option>Dinner</option><option>Evening Snack</option><option>Other</option>
+      </select>
+    </div>
+    <div class="grid2" style="margin-bottom:10px;">
+      <div class="field" style="margin:0;"><label>Calories</label><input id="edit-meal-cal" type="number" inputmode="decimal"></div>
+      <div class="field" style="margin:0;"><label>Protein (g)</label><input id="edit-meal-pro" type="number" inputmode="decimal"></div>
+    </div>
+    <div class="grid2" style="margin-bottom:16px;">
+      <div class="field" style="margin:0;"><label>Carbs (g)</label><input id="edit-meal-carb" type="number" inputmode="decimal"></div>
+      <div class="field" style="margin:0;"><label>Fiber (g)</label><input id="edit-meal-fib" type="number" inputmode="decimal"></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveEditMeal()">Save changes</button>
+  </div>
+</div>
+
+<!-- Edit favourite modal -->
+<div class="edit-overlay" id="edit-fav-overlay" onclick="handleEditOverlayClick(event,'edit-fav-overlay')">
+  <div class="edit-panel" id="edit-fav-panel">
+    <div class="edit-panel-handle" id="edit-fav-handle"></div>
+    <div class="edit-panel-title">Edit favourite</div>
+    <input type="hidden" id="edit-fav-idx">
+    <div class="field"><label>Meal name</label><input id="edit-fav-name" type="text" autocomplete="off"></div>
+    <div class="grid2" style="margin-bottom:10px;">
+      <div class="field" style="margin:0;"><label>Calories</label><input id="edit-fav-cal" type="number" inputmode="decimal"></div>
+      <div class="field" style="margin:0;"><label>Protein (g)</label><input id="edit-fav-pro" type="number" inputmode="decimal"></div>
+    </div>
+    <div class="grid2" style="margin-bottom:16px;">
+      <div class="field" style="margin:0;"><label>Carbs (g)</label><input id="edit-fav-carb" type="number" inputmode="decimal"></div>
+      <div class="field" style="margin:0;"><label>Fiber (g)</label><input id="edit-fav-fib" type="number" inputmode="decimal"></div>
+    </div>
+    <div class="field" style="margin-bottom:16px;"><label>Ingredients (optional)</label><textarea id="edit-fav-ingredients" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text);font-family:var(--font);font-size:13px;padding:10px 12px;resize:none;min-height:60px;" placeholder="e.g. Chicken breast 200g · Rice 100g"></textarea></div>
+    <button class="btn btn-primary" onclick="saveEditFav()">Save changes</button>
+  </div>
+</div>
+
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1095,12 +1207,28 @@ canvas { display: block; }
 // ── State ──────────────────────────────────────────────────────
 let S = { meals:{}, weights:{}, goals:{cal:2000,pro:150,carb:200,fiber:30,weight:null}, currentDay: todayKey() };
 
+function estNow() {
+  // Returns current Date object adjusted to EST (UTC-5) / EDT (UTC-4)
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  // EST = UTC-5, EDT = UTC-4; use Intl to detect DST automatically
+  const est = new Date(now.toLocaleString('en-US', {timeZone:'America/New_York'}));
+  return est;
+}
+function estKey(d) {
+  // Format a date object as YYYY-MM-DD in EST
+  if(!d) d = estNow();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+day;
+}
 function todayKey() {
-  return new Date().toISOString().slice(0,10);
+  return estKey(estNow());
 }
 function keyToDate(k) {
   const [y,m,d] = k.split('-').map(Number);
-  return new Date(y, m-1, d);
+  return new Date(y, m-1, d); // local date, no UTC shift
 }
 function fmtDay(k) {
   if(k === todayKey()) return 'Today';
@@ -1218,7 +1346,10 @@ function renderDay() {
           <div class="meal-entry-name">${escHtml(m.name)}</div>
           <span class="meal-entry-type">${m.meal}</span>
         </div>
-        <button class="meal-del" onclick="deleteMeal('${k}',${i})">×</button>
+        <div style="display:flex;gap:4px;">
+          <button class="meal-del" style="font-size:13px;padding:3px 6px;border:1px solid var(--border2);border-radius:6px;color:var(--text2);" onclick="openEditMeal('${k}',${i})">✎</button>
+          <button class="meal-del" onclick="deleteMeal('${k}',${i})">×</button>
+        </div>
       </div>
       <div class="meal-macros">
         <span class="macro-pill"><span>${Math.round(+m.cal||0)}</span> kcal</span>
@@ -1329,18 +1460,29 @@ function renderWeight() {
 
 // ── Stats ──────────────────────────────────────────────────────
 function getLast14() {
+  // Returns 14 days ending YESTERDAY (excludes today)
   const days=[], today=new Date();
-  for(let i=13;i>=0;i--) {
+  for(let i=14;i>=1;i--) {
     const d=new Date(today); d.setDate(d.getDate()-i);
-    days.push(d.toISOString().slice(0,10));
+    days.push(estKey(d));
+  }
+  return days;
+}
+
+function getNDays(n) {
+  // Returns n days ending YESTERDAY (excludes today)
+  const days=[], today=new Date();
+  for(let i=n;i>=1;i--) {
+    const d=new Date(today); d.setDate(d.getDate()-i);
+    days.push(estKey(d));
   }
   return days;
 }
 
 function calcStreak() {
-  let streak=0, d=new Date();
+  let streak=0, d=estNow();
   while(true) {
-    const k=d.toISOString().slice(0,10);
+    const k=estKey(d);
     if(S.meals[k]&&S.meals[k].length) { streak++; d.setDate(d.getDate()-1); }
     else break;
   }
@@ -1386,6 +1528,7 @@ function renderStats() {
     k=>{ const m=S.meals[k]; return m&&m.length?Math.round(m.reduce((a,e)=>a+(+e.cal||0),0)):null; },
     k=>S.weights[k]??null,
     S.goals.cal||null, S.goals.weight||null);
+  initChartInteraction();
 }
 
 function drawComboChart(id, days, calFn, wtFn, goalCal, goalWt) {
@@ -1507,6 +1650,9 @@ function drawComboChart(id, days, calFn, wtFn, goalCal, goalWt) {
   ctx.fillStyle='rgba(255,255,255,0.28)';
   ctx.font="8px 'DM Mono',monospace"; ctx.textAlign='center';
   days.forEach((k,i)=>{ if(i%3===0||i===n-1) ctx.fillText(fmtShort(k), xCenter(i), H-8); });
+
+  // Store for interaction hit-testing
+  _chartData = { days, calVals, wtVals, pad, cw, ch, n, H };
 }
 
 // ── Goals ──────────────────────────────────────────────────────
@@ -1662,6 +1808,7 @@ function renderFavsScreen() {
       </div>
       ${f.ingredients && f.ingredients.length ? `<div class="fav-ingredient-list">${f.ingredients.map(ing=>`${escHtml(ing.name)} ${ing.amount} ${ing.unit}`).join(' · ')}</div>` : ''}
       <div class="fav-actions" style="margin-top:8px;">
+        <button class="fav-log-btn" style="background:var(--bg4);color:var(--text2);border:1px solid var(--border2);" onclick="openEditFav(${i})">✎ Edit</button>
         <button class="fav-del-btn" onclick="deleteFav(${i})">×</button>
       </div>
     </div>`).join('');
@@ -1846,14 +1993,7 @@ function setChartRange(n) {
     S.goals.cal||null, S.goals.weight||null);
 }
 
-function getNDays(n) {
-  const days=[], today=new Date();
-  for(let i=n-1;i>=0;i--) {
-    const d=new Date(today); d.setDate(d.getDate()-i);
-    days.push(d.toISOString().slice(0,10));
-  }
-  return days;
-}
+
 
 // ── Override renderStats to include new features ───────────────
 const _origRenderStats = renderStats;
@@ -2108,6 +2248,146 @@ function loadTdeeInputs() {
   calcTdee();
 }
 
+
+// ── Chart interaction ───────────────────────────────────────────
+let _chartData = { days:[], calVals:[], wtVals:[], pad:{}, cw:0, ch:0, n:0, H:0 };
+
+function initChartInteraction() {
+  const wrap   = document.getElementById('combo-chart-wrap');
+  const canvas = document.getElementById('combo-chart');
+  const tooltip= document.getElementById('chart-tooltip');
+  const cross  = document.getElementById('chart-crosshair');
+  if(!wrap||!canvas||!tooltip||!cross) return;
+
+  function getX(e) {
+    const rect = canvas.getBoundingClientRect();
+    return (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+  }
+
+  function showTooltip(clientX) {
+    const { days, calVals, wtVals, pad, cw, n } = _chartData;
+    if(!n) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = clientX - rect.left;
+    // Find closest bar
+    let closest = 0, minDist = Infinity;
+    for(let i=0;i<n;i++) {
+      const bx = pad.l + (i+0.5)*(cw/n);
+      const dist = Math.abs(x - bx);
+      if(dist < minDist) { minDist=dist; closest=i; }
+    }
+    const bx = pad.l + (closest+0.5)*(cw/n);
+    const cal = calVals[closest];
+    const wt  = wtVals[closest];
+    const day = days[closest];
+
+    // Position crosshair
+    cross.style.left = bx + 'px';
+    cross.classList.add('visible');
+
+    // Position tooltip — keep within bounds
+    document.getElementById('tt-date').textContent = fmtShort(day);
+    document.getElementById('tt-cal').textContent  = cal!==null ? cal.toLocaleString()+' kcal' : '—';
+    document.getElementById('tt-wt').textContent   = wt!==null  ? wt.toFixed(1)+' lbs' : '—';
+
+    const ttW = 120;
+    let left = bx;
+    const wrapW = wrap.clientWidth;
+    if(left + ttW/2 > wrapW) left = wrapW - ttW/2;
+    if(left - ttW/2 < 0) left = ttW/2;
+    tooltip.style.left = left + 'px';
+    tooltip.style.top  = '8px';
+    tooltip.classList.add('visible');
+  }
+
+  function hideTooltip() {
+    tooltip.classList.remove('visible');
+    cross.classList.remove('visible');
+  }
+
+  canvas.addEventListener('mousemove',  e => showTooltip(e.clientX));
+  canvas.addEventListener('mouseleave', hideTooltip);
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); showTooltip(e.touches[0].clientX); }, {passive:false});
+  canvas.addEventListener('touchmove',  e => { e.preventDefault(); showTooltip(e.touches[0].clientX); }, {passive:false});
+  canvas.addEventListener('touchend',   hideTooltip);
+}
+
+
+// ── Edit meal ──────────────────────────────────────────────────
+function openEditMeal(k, i) {
+  const m = S.meals[k]?.[i];
+  if(!m) return;
+  document.getElementById('edit-meal-day').value  = k;
+  document.getElementById('edit-meal-idx').value  = i;
+  document.getElementById('edit-meal-name').value = m.name;
+  document.getElementById('edit-meal-type').value = m.meal;
+  document.getElementById('edit-meal-cal').value  = m.cal;
+  document.getElementById('edit-meal-pro').value  = m.pro;
+  document.getElementById('edit-meal-carb').value = m.carb;
+  document.getElementById('edit-meal-fib').value  = m.fib;
+  document.getElementById('edit-meal-overlay').classList.add('open');
+}
+function saveEditMeal() {
+  const k = document.getElementById('edit-meal-day').value;
+  const i = +document.getElementById('edit-meal-idx').value;
+  if(!S.meals[k]) return;
+  S.meals[k][i] = {
+    name: document.getElementById('edit-meal-name').value.trim(),
+    meal: document.getElementById('edit-meal-type').value,
+    cal:  +document.getElementById('edit-meal-cal').value  || 0,
+    pro:  +document.getElementById('edit-meal-pro').value  || 0,
+    carb: +document.getElementById('edit-meal-carb').value || 0,
+    fib:  +document.getElementById('edit-meal-fib').value  || 0,
+  };
+  saveState();
+  document.getElementById('edit-meal-overlay').classList.remove('open');
+  renderDay();
+  toast('Meal updated ✓');
+}
+
+// ── Edit favourite ─────────────────────────────────────────────
+function openEditFav(i) {
+  const favs = loadFavs();
+  const f = favs[i];
+  if(!f) return;
+  document.getElementById('edit-fav-idx').value  = i;
+  document.getElementById('edit-fav-name').value = f.name;
+  document.getElementById('edit-fav-cal').value  = f.cal;
+  document.getElementById('edit-fav-pro').value  = f.pro;
+  document.getElementById('edit-fav-carb').value = f.carb;
+  document.getElementById('edit-fav-fib').value  = f.fib;
+  // Show ingredients as simple text
+  const ingStr = f.ingredients ? f.ingredients.map(ing=>`${ing.name} ${ing.amount}${ing.unit}`).join(' · ') : '';
+  document.getElementById('edit-fav-ingredients').value = ingStr;
+  document.getElementById('edit-fav-overlay').classList.add('open');
+}
+function saveEditFav() {
+  const i = +document.getElementById('edit-fav-idx').value;
+  const favs = loadFavs();
+  if(!favs[i]) return;
+  // Parse ingredients from text
+  const ingText = document.getElementById('edit-fav-ingredients').value.trim();
+  const ingredients = ingText ? ingText.split('·').map(s=>s.trim()).filter(Boolean).map(s=>({name:s,amount:'',unit:''})) : [];
+  favs[i] = {
+    name: document.getElementById('edit-fav-name').value.trim(),
+    cal:  +document.getElementById('edit-fav-cal').value  || 0,
+    pro:  +document.getElementById('edit-fav-pro').value  || 0,
+    carb: +document.getElementById('edit-fav-carb').value || 0,
+    fib:  +document.getElementById('edit-fav-fib').value  || 0,
+    ingredients,
+  };
+  saveFavs(favs);
+  document.getElementById('edit-fav-overlay').classList.remove('open');
+  renderFavsScreen();
+  toast('Favourite updated ✓');
+}
+
+function handleEditOverlayClick(e, overlayId) {
+  if(e.target === document.getElementById(overlayId)) {
+    document.getElementById(overlayId).classList.remove('open');
+  }
+}
+
 // ── Boot ───────────────────────────────────────────────────────
 loadState();
 document.getElementById('w-date').value = todayKey();
@@ -2122,7 +2402,9 @@ for(const [s,e,label] of mealMap) {
 loadSettingsState();
 addIngredientRow();
 makeDraggablePanel("settings-handle","settings-panel",closeSettings);
-makeDraggablePanel("fav-picker-handle","fav-picker-panel",closeFavPicker); // init first ingredient row
+makeDraggablePanel("fav-picker-handle","fav-picker-panel",closeFavPicker);
+makeDraggablePanel("edit-meal-handle","edit-meal-panel",()=>document.getElementById('edit-meal-overlay').classList.remove('open'));
+makeDraggablePanel("edit-fav-handle","edit-fav-panel",()=>document.getElementById('edit-fav-overlay').classList.remove('open')); // init first ingredient row
 renderFavsScreen();
 renderDay();
 renderWeight();
