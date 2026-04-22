@@ -109,23 +109,27 @@ body {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   padding: 16px;
-  padding-bottom: calc(16px + 74px + var(--safe));
+  padding-bottom: calc(16px + 90px + var(--safe));
 }
 .scroll-area::-webkit-scrollbar { display: none; }
 
 /* ── Bottom nav ── */
 .nav {
-  flex-shrink: 0;
   position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 430px;
-  background: var(--bg);
-  border-top: 1px solid var(--border);
+  bottom: calc(16px + var(--safe));
+  left: max(12px, calc(50% - 215px + 12px));
+  right: max(calc(12px + 58px + 8px), calc(50% - 215px + 12px + 58px + 8px));
+  width: auto;
+  background: rgba(28,28,30,0.55);
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  border-radius: 20px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -1px 0 rgba(0,0,0,0.2);
   display: flex;
-  padding-bottom: var(--safe);
+  align-items: center;
+  padding: 0;
   z-index: 100;
 }
 .nav-btn {
@@ -134,7 +138,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  padding: 10px 4px 12px;
+  padding: 9px 4px 11px;
   background: none;
   border: none;
   color: var(--text3);
@@ -739,6 +743,38 @@ canvas { display: block; }
 .edit-panel-handle { width: 36px; height: 4px; background: var(--border2); border-radius: 2px; margin: 14px auto 8px; }
 .edit-panel-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 16px; }
 
+
+/* ── Fitness mode button — floating separate ── */
+.nav-fitness-wrap {
+  position: fixed;
+  bottom: calc(16px + var(--safe));
+  right: max(12px, calc(50% - 215px + 12px));
+  z-index: 101;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-fitness-btn {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  background: rgba(28,28,30,0.55);
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -1px 0 rgba(0,0,0,0.2), 0 0 0 1px rgba(240,165,0,0.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, border-color 0.15s;
+}
+.nav-fitness-btn:active {
+  transform: scale(0.93);
+  border-color: rgba(26,111,212,0.6);
+}
+
 </style>
 </head>
 <body>
@@ -860,22 +896,6 @@ canvas { display: block; }
       </div>
     </div>
 
-    <!-- HISTORY -->
-    <div class="screen" id="screen-history">
-      <div class="date-nav">
-        <button class="date-nav-btn" onclick="changeDay(-1)">‹</button>
-        <div class="date-nav-label">
-          <div class="day" id="hist-day-label"></div>
-          <div class="full" id="hist-full-label"></div>
-        </div>
-        <button class="date-nav-btn" id="next-day-hist" onclick="changeDay(1)">›</button>
-      </div>
-      <div id="hist-totals"></div>
-      <div class="section-lbl">Meals</div>
-      <div id="hist-meal-list"></div>
-
-    </div>
-
     <!-- STATS -->
     <div class="screen" id="screen-stats">
       <div class="section-lbl">Macro breakdown — 7-day average</div>
@@ -911,36 +931,7 @@ canvas { display: block; }
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- FAVOURITES -->
-    <div class="screen" id="screen-favs">
-      <div class="section-lbl">Your favourites</div>
-      <div id="favs-list"></div>
-      <div class="section-lbl" style="margin-top:20px;">Create new favourite</div>
-      <div class="card">
-        <div class="field"><label>Meal name</label><input id="fav-name" type="text" placeholder="e.g. Post-workout shake" autocomplete="off"></div>
-        <div class="grid2" style="margin-bottom:10px;">
-          <div class="field" style="margin:0;"><label>Calories</label><input id="fav-cal" type="number" inputmode="decimal" placeholder="0"></div>
-          <div class="field" style="margin:0;"><label>Protein (g)</label><input id="fav-pro" type="number" inputmode="decimal" placeholder="0"></div>
-        </div>
-        <div class="grid2" style="margin-bottom:14px;">
-          <div class="field" style="margin:0;"><label>Carbs (g)</label><input id="fav-carb" type="number" inputmode="decimal" placeholder="0"></div>
-          <div class="field" style="margin:0;"><label>Fiber (g)</label><input id="fav-fib" type="number" inputmode="decimal" placeholder="0"></div>
-        </div>
-        <div class="field">
-          <label>Ingredients</label>
-          <div id="ingredient-rows"></div>
-          <button class="add-ingredient-btn" onclick="addIngredientRow()">+ Add ingredient</button>
-        </div>
-        <div style="margin-top:14px;">
-          <button class="btn btn-primary" onclick="saveFavourite()">Save favourite</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- GOALS -->
-    <div class="screen" id="screen-goals">
       <div class="section-lbl">TDEE calculator</div>
       <div class="card">
         <!-- Sex + Age -->
@@ -1035,6 +1026,32 @@ canvas { display: block; }
       <button class="btn btn-primary" onclick="saveGoals()">Save goals</button>
     </div>
 
+    <!-- FAVOURITES -->
+    <div class="screen" id="screen-favs">
+      <div class="section-lbl">Your favourites</div>
+      <div id="favs-list"></div>
+      <div class="section-lbl" style="margin-top:20px;">Create new favourite</div>
+      <div class="card">
+        <div class="field"><label>Meal name</label><input id="fav-name" type="text" placeholder="e.g. Post-workout shake" autocomplete="off"></div>
+        <div class="grid2" style="margin-bottom:10px;">
+          <div class="field" style="margin:0;"><label>Calories</label><input id="fav-cal" type="number" inputmode="decimal" placeholder="0"></div>
+          <div class="field" style="margin:0;"><label>Protein (g)</label><input id="fav-pro" type="number" inputmode="decimal" placeholder="0"></div>
+        </div>
+        <div class="grid2" style="margin-bottom:14px;">
+          <div class="field" style="margin:0;"><label>Carbs (g)</label><input id="fav-carb" type="number" inputmode="decimal" placeholder="0"></div>
+          <div class="field" style="margin:0;"><label>Fiber (g)</label><input id="fav-fib" type="number" inputmode="decimal" placeholder="0"></div>
+        </div>
+        <div class="field">
+          <label>Ingredients</label>
+          <div id="ingredient-rows"></div>
+          <button class="add-ingredient-btn" onclick="addIngredientRow()">+ Add ingredient</button>
+        </div>
+        <div style="margin-top:14px;">
+          <button class="btn btn-primary" onclick="saveFavourite()">Save favourite</button>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /scroll-area -->
 
   <nav class="nav">
@@ -1046,23 +1063,35 @@ canvas { display: block; }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="10" r="3"/><path d="M3 20a9 9 0 1118 0" stroke-linecap="round"/></svg>
       Weight
     </button>
-    <button class="nav-btn" id="nav-history" onclick="switchTab('history')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg>
-      History
-    </button>
     <button class="nav-btn" id="nav-stats" onclick="switchTab('stats')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
       Stats
-    </button>
-    <button class="nav-btn" id="nav-goals" onclick="switchTab('goals')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/></svg>
-      Goals
     </button>
     <button class="nav-btn" id="nav-favs" onclick="switchTab('favs')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
       Favs
     </button>
   </nav>
+  <!-- Floating fitness button -->
+  <div class="nav-fitness-wrap">
+    <button class="nav-fitness-btn" id="nav-fitness" onclick="openFitnessMode()" aria-label="Fitness mode">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <defs>
+          <filter id="bolt-glow" x="-80%" y="-80%" width="260%" height="260%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="2.2" result="blur"/>
+            <feColorMatrix in="blur" type="matrix" values="0.3 0.6 1 0 0  0.3 0.6 1 0 0  0.3 0.6 1 0 0  0 0 0 1.4 0" result="coloredBlur"/>
+            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <!-- Bloom layer — wide soft blue glow bleeding into glass -->
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="rgba(74,158,255,0.55)" filter="url(#bolt-glow)"/>
+        <!-- Amber warm core fill -->
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="rgba(240,165,0,0.22)"/>
+        <!-- Crisp blue stroke on top -->
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" stroke="#6ab8ff" stroke-width="1.4" fill="none"/>
+      </svg>
+    </button>
+  </div>
 <!-- Settings panel -->
 <div class="settings-overlay" id="settings-overlay" onclick="handleSettingsOverlayClick(event)">
   <div class="settings-panel" id="settings-panel">
@@ -1273,10 +1302,10 @@ function switchTab(tab) {
   const navBtn = document.getElementById('nav-'+tab);
   if(navBtn) navBtn.classList.add('active');
   document.getElementById('scroll-area').scrollTop = 0;
-  if(tab==='log'||tab==='history') renderDay();
+  if(tab==='log') renderDay();
   if(tab==='weight') renderWeight();
-  if(tab==='stats') renderStats();
-  if(tab==='goals') { loadGoalsForm(); loadTdeeInputs(); }
+  if(tab==='stats') { renderStats(); loadGoalsForm(); loadTdeeInputs(); }
+
   if(tab==='favs') { renderFavsScreen(); }
 }
 
@@ -1293,17 +1322,13 @@ function renderDay() {
   const k = S.currentDay;
   const isToday = k === todayKey();
 
-  ['log','hist'].forEach(prefix=>{
-    const dl = document.getElementById(prefix+'-day-label');
-    const fl = document.getElementById(prefix+'-full-label');
-    if(dl) dl.textContent = fmtDay(k);
-    if(fl) fl.textContent = fmtFull(k);
-  });
+  const dl = document.getElementById('log-day-label');
+  const fl = document.getElementById('log-full-label');
+  if(dl) dl.textContent = fmtDay(k);
+  if(fl) fl.textContent = fmtFull(k);
 
   const nextLogBtn = document.getElementById('next-day-log');
-  const nextHistBtn = document.getElementById('next-day-hist');
   if(nextLogBtn) nextLogBtn.classList.toggle('disabled', isToday);
-  if(nextHistBtn) nextHistBtn.classList.toggle('disabled', isToday);
 
   const meals = S.meals[k] || [];
   let cal=0,pro=0,carb=0,fib=0;
@@ -1329,9 +1354,7 @@ function renderDay() {
     </div>` : '';
 
   const td = document.getElementById('totals-display');
-  const ht = document.getElementById('hist-totals');
   if(td) td.innerHTML = totHTML;
-  if(ht) ht.innerHTML = totHTML;
 
   const streak = calcStreak();
   const sd = document.getElementById('streak-display');
@@ -1361,10 +1384,8 @@ function renderDay() {
     `<div class="empty-state"><div class="empty-icon">🍽</div>No meals logged for this day.<br>Add your first meal above.</div>`;
 
   const ml = document.getElementById('meal-list');
-  const hml = document.getElementById('hist-meal-list');
   const lms = document.getElementById('log-meal-section');
   if(ml) ml.innerHTML = mealHTML;
-  if(hml) hml.innerHTML = mealHTML;
   if(lms) {
     lms.style.display = meals.length ? 'block' : 'none';
     const lmc = document.getElementById('log-meal-count');
@@ -2386,6 +2407,12 @@ function handleEditOverlayClick(e, overlayId) {
   if(e.target === document.getElementById(overlayId)) {
     document.getElementById(overlayId).classList.remove('open');
   }
+}
+
+
+// ── Fitness mode (coming soon) ─────────────────────────────────
+function openFitnessMode() {
+  toast('Fitness mode coming soon');
 }
 
 // ── Boot ───────────────────────────────────────────────────────
